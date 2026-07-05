@@ -14,6 +14,13 @@ const CATEGORY_BADGE: Record<MatchResult['constellation']['category'], string> =
   fun: 'おはなしの せいざ',
 };
 
+function praiseForScore(score: number): string {
+  if (score >= 85) return '⭐ かんぺき!';
+  if (score >= 70) return '🌟 すごい!';
+  if (score >= 55) return '✨ いいね!';
+  return '🌙 おしい! もういちど やってみよう';
+}
+
 export function ResultOverlay({ result, isNewDiscovery, onRetry, onOpenZukan }: ResultOverlayProps) {
   const scoreRounded = Math.round(result.score);
   const { constellation } = result;
@@ -50,6 +57,7 @@ export function ResultOverlay({ result, isNewDiscovery, onRetry, onOpenZukan }: 
         </div>
         <span className="result-panel__score-value">{scoreRounded}%</span>
       </div>
+      <p className="result-panel__praise">{praiseForScore(result.score)}</p>
 
       <div className="result-panel__actions">
         <button type="button" className="result-panel__retry" onClick={onRetry}>

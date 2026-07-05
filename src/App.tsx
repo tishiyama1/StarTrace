@@ -65,10 +65,18 @@ function App() {
   }, [reset]);
 
   const canvasInteractive = result === null && !showZukan;
+  const showTraceHint = canvasInteractive && currentStroke.length === 0;
 
   return (
     <div className="app-root">
       <Header hint={hint} />
+
+      {showTraceHint && (
+        <div className="trace-hint" aria-hidden="true">
+          <span className="trace-hint__finger">👆</span>
+          <span className="trace-hint__text">ゆびで じゆうに なぞってみてね</span>
+        </div>
+      )}
 
       <button
         type="button"

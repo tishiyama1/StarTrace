@@ -78,6 +78,7 @@ export function Zukan({ discovered, onClose, onReset }: ZukanProps) {
             key={f.key}
             type="button"
             className={`zukan__filter${filter === f.key ? ' zukan__filter--active' : ''}`}
+            aria-pressed={filter === f.key}
             onClick={() => setFilter(f.key)}
           >
             {f.label}
