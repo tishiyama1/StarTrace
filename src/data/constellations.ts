@@ -12,6 +12,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'おおぐま座(北斗七星)',
     nameEn: 'Big Dipper (Ursa Major)',
     latinName: 'Ursa Major',
+    description:
+      '大きなクマの形をした星座だよ。7つの明るい星が、水をくむ「ひしゃく」のように並んでいるよ。',
     path: [
       { x: 5, y: 40 },
       { x: 18, y: 36 },
@@ -27,6 +29,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'こぐま座',
     nameEn: 'Little Dipper (Ursa Minor)',
     latinName: 'Ursa Minor',
+    description: '小さなクマの星座だよ。ひしゃくの柄の先っぽに、北をおしえてくれる北極星があるよ。',
     path: [
       { x: 35, y: 8 },
       { x: 40, y: 24 },
@@ -42,6 +45,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'カシオペヤ座',
     nameEn: 'Cassiopeia',
     latinName: 'Cassiopeia',
+    description: 'アルファベットの「W」のように見える、5つの星がジグザグに並ぶ星座だよ。',
     path: [
       { x: 8, y: 60 },
       { x: 28, y: 28 },
@@ -55,6 +59,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'オリオン座',
     nameEn: 'Orion',
     latinName: 'Orion',
+    description: '3つ並んだ星が「ベルト」に見える、冬の夜空でいちばん目立つ星座だよ。',
     path: [
       { x: 15, y: 10 },
       { x: 35, y: 45 },
@@ -69,6 +74,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'さそり座',
     nameEn: 'Scorpius',
     latinName: 'Scorpius',
+    description: 'さそりのしっぽのように、先っぽがくるんと丸まった形の星座だよ。',
     path: [
       { x: 8, y: 15 },
       { x: 20, y: 12 },
@@ -85,6 +91,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'はくちょう座(北十字)',
     nameEn: 'Northern Cross (Cygnus)',
     latinName: 'Cygnus',
+    description: '羽を広げて飛ぶ白鳥の形の星座だよ。星をつなぐと大きな十字架のように見えるよ。',
     path: [
       { x: 50, y: 10 },
       { x: 50, y: 50 },
@@ -100,6 +107,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'こと座',
     nameEn: 'Lyra',
     latinName: 'Lyra',
+    description: '小さな竪琴(たてごと)の形をした星座だよ。夏の夜空で明るく光る星「ベガ」があるよ。',
     path: [
       { x: 50, y: 10 },
       { x: 30, y: 40 },
@@ -113,6 +121,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'わし座',
     nameEn: 'Aquila',
     latinName: 'Aquila',
+    description: '大きな翼を広げたワシの形の星座だよ。彦星(ひこぼし)として知られる星「アルタイル」があるよ。',
     path: [
       { x: 15, y: 50 },
       { x: 50, y: 35 },
@@ -126,6 +135,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'ふたご座',
     nameEn: 'Gemini',
     latinName: 'Gemini',
+    description: '仲よしの双子が頭をよせて並んで立っているような形の星座だよ。',
     path: [
       { x: 15, y: 90 },
       { x: 20, y: 55 },
@@ -140,6 +150,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'おうし座',
     nameEn: 'Taurus',
     latinName: 'Taurus',
+    description: '大きな角を持つ牛の顔の形をした星座だよ。',
     path: [
       { x: 10, y: 10 },
       { x: 30, y: 45 },
@@ -153,6 +164,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'しし座',
     nameEn: 'Leo',
     latinName: 'Leo',
+    description: 'ライオンが寝そべっているような形の星座だよ。「?」マークに似た頭の部分が目印だよ。',
     path: [
       { x: 15, y: 20 },
       { x: 12, y: 38 },
@@ -168,6 +180,7 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'ペガスス座(秋の四辺形)',
     nameEn: 'Great Square of Pegasus',
     latinName: 'Pegasus',
+    description: '空飛ぶ天馬(てんま)ペガススの星座だよ。4つの星でできた大きな四角形が目印だよ。',
     path: [
       { x: 20, y: 20 },
       { x: 80, y: 20 },

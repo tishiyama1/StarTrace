@@ -21,6 +21,7 @@ export interface Constellation {
   nameJa: string;       // 表示名 (例: "おおぐま座")
   nameEn: string;       // 通称英語名 (例: "Big Dipper (Ursa Major)")
   latinName: string;    // 学名 (例: "Ursa Major")
+  description: string;  // 結果画面に表示する、子供向けの簡単な星座紹介文
   path: ConstellationPoint[]; // なぞる順に星を直線で結んだ座標列(1ストローク分)
 }
 ```
@@ -62,5 +63,4 @@ export interface Constellation {
 ## 5. 将来の拡張
 
 - 季節ごとの星座追加、88星座への拡張は `path` データを追加するだけで対応可能。
-- 星座ごとの豆知識・神話文を追加する場合は `description` フィールドを型に追加する
-  (現時点ではスコープ外のため未実装)。
+- 星座ごとの豆知識・神話文は `description` フィールド(結果画面に表示)に記載する。

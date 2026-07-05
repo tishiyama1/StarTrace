@@ -72,6 +72,34 @@
   font-size: 0.95rem;
 }
 
+.constellation-diagram {
+  display: block;
+  width: min(46vw, 160px);
+  height: min(46vw, 160px);
+  margin: 0 auto 12px;
+}
+
+.constellation-diagram__line {
+  fill: none;
+  stroke: rgba(255, 205, 90, 0.9);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.constellation-diagram__star {
+  fill: #fff8e1;
+  stroke: rgba(255, 217, 122, 0.85);
+  stroke-width: 0.6;
+}
+
+.result-panel__description {
+  margin: 0 0 16px;
+  color: #cfe3ff;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
 .result-panel__score {
   display: flex;
   align-items: center;
