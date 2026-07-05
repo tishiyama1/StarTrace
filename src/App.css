@@ -1,0 +1,125 @@
+.app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #050818;
+}
+
+.sky-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.app-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px 12px;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: clamp(1.1rem, 4vw, 1.8rem);
+  color: #fff8e1;
+  letter-spacing: 0.02em;
+}
+
+.app-header__subtitle {
+  margin: 6px 0 0;
+  font-size: clamp(0.9rem, 3vw, 1.15rem);
+  color: #cfe3ff;
+}
+
+.result-panel {
+  position: absolute;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(92vw, 420px);
+  background: rgba(15, 20, 48, 0.92);
+  border: 1px solid rgba(255, 220, 150, 0.35);
+  border-radius: 20px;
+  padding: 20px 24px 24px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.result-panel__badge {
+  margin: 0 0 4px;
+  color: #ffd97a;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.result-panel__name {
+  margin: 0;
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  color: #ffffff;
+}
+
+.result-panel__sub {
+  margin: 4px 0 16px;
+  color: #a9b8e6;
+  font-size: 0.95rem;
+}
+
+.result-panel__score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.result-panel__score-label {
+  color: #cfe3ff;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.result-panel__score-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.result-panel__score-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7ee8ff, #ffd97a);
+  transition: width 0.4s ease;
+}
+
+.result-panel__score-value {
+  color: #fff8e1;
+  font-weight: 700;
+  min-width: 3ch;
+  text-align: right;
+}
+
+.result-panel__retry {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #14163a;
+  background: linear-gradient(90deg, #7ee8ff, #ffd97a);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.result-panel__retry:active {
+  transform: scale(0.97);
+}
