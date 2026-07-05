@@ -21,6 +21,12 @@ export const DISTANCE_SCALE = 1.4;
 /** これより短いストロークは「タップ」とみなしマッチングを行わない */
 export const MIN_STROKE_LENGTH_RATIO = 0.05;
 
+/**
+ * このマッチ度以上のときに「図鑑に登録する(=発見した)」とみなす閾値。
+ * 低すぎると適当に描いても集まってしまい、高すぎると子供が達成できないため中間値。
+ */
+export const DISCOVERY_SCORE_THRESHOLD = 55;
+
 function distanceForDirection(userNormalized: Point[], templateNormalized: Point[]): number {
   const theta = optimalRotationAngle(userNormalized, templateNormalized);
   const rotated = templateNormalized.map((p) => rotatePoint(p, theta));

@@ -21,25 +21,33 @@ StarTrace/
 │   ├── requirements.md
 │   ├── architecture.md
 │   ├── constellation-data.md
-│   └── matching-algorithm.md
+│   ├── matching-algorithm.md
+│   ├── zukan-feature.md         # 図鑑機能の設計
+│   └── visuals.md               # 夜空ビジュアル(天の川・流れ星・星雲)の設計
 ├── src/
 │   ├── main.tsx                 # エントリーポイント
-│   ├── App.tsx                  # 画面全体の状態管理(描画中/結果表示の切り替え)
+│   ├── App.tsx                  # 画面全体の状態管理(なぞり/結果/図鑑の切り替え)
+│   ├── App.css                  # アプリUIのスタイル
 │   ├── index.css                # グローバルスタイル
-│   ├── types.ts                 # 共通型定義 (Point, Constellation など)
+│   ├── types.ts                 # 共通型定義 (Point, Constellation, category など)
 │   ├── data/
-│   │   └── constellations.ts    # 星座テンプレートデータ(12星座分)
+│   │   └── constellations.ts    # 星座テンプレートデータ(実在14 + おはなし8 = 22星座)
 │   ├── lib/
 │   │   ├── geometry.ts          # 点・ベクトル演算の基本ユーティリティ
 │   │   ├── resample.ts          # ストロークの等間隔リサンプリング
-│   │   ├── shapeMatcher.ts      # 正規化・回転探索・距離計算・判定ロジック
+│   │   ├── shapeMatcher.ts      # 正規化・回転探索・距離計算・判定ロジック + 発見閾値
+│   │   ├── skyEffects.ts        # 星・天の川・星雲・流れ星の生成/描画ユーティリティ
 │   │   └── *.test.ts            # Vitest による単体テスト
 │   ├── components/
-│   │   ├── SkyCanvas.tsx        # 背景の星 + なぞり描画を担当するCanvasコンポーネント
-│   │   ├── ResultOverlay.tsx    # 判定結果(星座名・マッチ度・お手本形状)の表示
+│   │   ├── SkyCanvas.tsx        # 夜空の全レイヤー + なぞり描画を担当するCanvas
+│   │   ├── ResultOverlay.tsx    # 判定結果(星座名・カテゴリ・マッチ度・お手本形状・NEW演出)
+│   │   ├── ConstellationDiagram.tsx # 星座のお手本の形をSVGの線画で表示
+│   │   ├── Zukan.tsx            # ほしぞら図鑑(発見一覧・進捗・カテゴリ絞り込み)
 │   │   └── Header.tsx           # タイトル・遊び方の簡単な案内
 │   └── hooks/
-│       └── useStrokeInput.ts    # マウス/タッチ入力を1本のストローク(Point[])に変換するフック
+│       ├── useStrokeInput.ts    # マウス/タッチ入力を1本のストローク(Point[])に変換
+│       ├── useViewportSize.ts   # ビューポートサイズの追従
+│       └── useDiscoveries.ts    # 発見済み星座を localStorage で永続管理
 ├── index.html
 ├── package.json
 ├── tsconfig.json
@@ -69,16 +77,16 @@ App.tsx が状態を更新 → ResultOverlay に結果を渡して表示
 
 ## 4. コンポーネント設計の要点
 
-- **App.tsx**: `idle`(なぞり待ち) / `drawing`(なぞり中) / `result`(結果表示) の3状態を管理する状態機械として実装する。ロジック(判定)はコンポーネントに持たせず `lib/shapeMatcher.ts` に隔離し、UIとロジックを分離する。
-- **SkyCanvas.tsx**: 背景の装飾星(ランダム生成、`useMemo` で初期化時に1回だけ生成)と、ユーザーのストローク軌跡、結果表示時のお手本ライン(星座の形)の3レイヤーを1つのCanvasに重ねて描画する。
-- **useStrokeInput.ts**: Pointer Events API (`onPointerDown/Move/Up`) を使い、マウス・タッチ・ペンを同一コードで扱う。座標はCanvasのクライアント座標系で正規化して保持する。
-- 状態・データは全てクライアントメモリ内のみで完結し、永続化は行わない(スコープ外)。
+- **App.tsx**: `なぞり待ち` / `結果表示` / `図鑑表示` の状態を管理する。判定ロジックはコンポーネントに持たせず `lib/shapeMatcher.ts` に隔離し、UIとロジックを分離する。マッチ度が発見閾値以上のとき `useDiscoveries.add()` で図鑑に登録し、戻り値で「新発見かどうか」を受け取って結果画面の演出に渡す。
+- **SkyCanvas.tsx**: 夜空の各レイヤー(星雲 → 天の川 → 星 → 流れ星)+ 結果表示時のお手本ライン + ユーザーのストローク軌跡を、1つのCanvasに `requestAnimationFrame` で重ねて描画する。天体の生成・更新・描画ロジックは `lib/skyEffects.ts` に切り出し、コンポーネントは配置と合成のみを担う。静的な天体は初回だけ生成して `useRef` に保持し、流れ星のみ動的に生成・更新する。
+- **skyEffects.ts**: 星・天の川・星雲・流れ星の「生成関数」と「描画関数」を純粋関数として提供する。座標は 0〜1 の正規化値で持ち、描画時に画面サイズを掛ける。流れ星の生成・移動・寿命判定は副作用のない関数にし、単体テストで検証する(`skyEffects.test.ts`)。
+- **useStrokeInput.ts**: Pointer Events API (`onPointerDown/Move/Up`) を使い、マウス・タッチ・ペンを同一コードで扱う。座標はCanvasのクライアント座標系で保持する。
+- **useDiscoveries.ts**: 発見済み星座IDの集合を `localStorage`(キー `startrace.discoveries.v1`)に永続化する。`add()` は同期的に「初回発見か」を返すため `useRef` で最新状態をミラーしている。localStorage が使えない環境でも例外を握りつぶして空の図鑑として動作する。
+- **Zukan.tsx / ResultOverlay.tsx / ConstellationDiagram.tsx**: 表示専用コンポーネント。図鑑・結果の見た目は `Constellation` のデータ(`category` / `emoji` / `description` / `path`)から駆動される。
 
 ## 5. 拡張ポイント(将来の機能追加時の設計余地)
 
-要求仕様のスコープ外とした機能を後から追加しやすいように、以下を意識して設計する。
-
-- **効果音・アニメーション**: `ResultOverlay` にエフェクト層を追加するだけで対応できるよう、判定ロジックとUIを分離しておく。
-- **豆知識・神話解説**: `Constellation` 型に `description` フィールドを最初から持たせておき、将来 `ResultOverlay` に表示欄を追加するだけで拡張できるようにする。
-- **図鑑・コレクション機能**: `localStorage` への保存キーを `constellationId` ベースで設計しやすいよう、星座データに一意な `id` を持たせる。
-- **星座の追加(88星座対応や季節切り替え)**: `data/constellations.ts` にオブジェクトを追加するだけで対応できるデータ駆動設計にする。
+- **星座の追加(88星座対応や季節切り替え)**: `data/constellations.ts` にオブジェクトを追加するだけで対応できるデータ駆動設計。追加した星座は図鑑・判定・テストに自動で反映される(テストは `CONSTELLATIONS` をループするため)。新しい形状は識別性テストで既存と衝突しないことが保証される。
+- **効果音・BGM**: `App.tsx` の状態遷移(新発見・結果表示)にフックして音を鳴らす層を足せるよう、演出のトリガー(`isNewDiscovery` 等)を状態として持たせてある。
+- **物語・神話解説の拡充**: `Constellation.description` を長文化するか、フィールドを追加して `ResultOverlay` / `Zukan` に表示欄を足すだけで拡張できる。
+- **進捗の同期・共有**: 現状は `localStorage` のみ。`useDiscoveries` のストレージ層を差し替えればサーバー同期に拡張できる。

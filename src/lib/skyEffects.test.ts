@@ -1,0 +1,116 @@
+import { describe, expect, it } from 'vitest';
+import {
+  generateBackgroundStars,
+  generateMilkyWayStars,
+  generateNebulae,
+  spawnShootingStar,
+  updateShootingStars,
+  type ShootingStar,
+} from './skyEffects';
+
+describe('generateBackgroundStars', () => {
+  it('creates the requested number of stars with normalized coordinates', () => {
+    const stars = generateBackgroundStars(50);
+    expect(stars).toHaveLength(50);
+    for (const s of stars) {
+      expect(s.x).toBeGreaterThanOrEqual(0);
+      expect(s.x).toBeLessThanOrEqual(1);
+      expect(s.y).toBeGreaterThanOrEqual(0);
+      expect(s.y).toBeLessThanOrEqual(1);
+      expect(s.radius).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('generateMilkyWayStars', () => {
+  it('creates the requested number of stars', () => {
+    expect(generateMilkyWayStars(80, Math.PI * 0.14)).toHaveLength(80);
+  });
+});
+
+describe('generateNebulae', () => {
+  it('returns non-empty nebulae with valid rgb strings', () => {
+    const nebulae = generateNebulae();
+    expect(nebulae.length).toBeGreaterThan(0);
+    for (const n of nebulae) {
+      expect(n.rgb.split(',')).toHaveLength(3);
+      expect(n.peakAlpha).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('spawnShootingStar', () => {
+  it('starts near the top with a normalized direction vector', () => {
+    for (let i = 0; i < 30; i++) {
+      const s = spawnShootingStar();
+      expect(s.y).toBeLessThan(0.3);
+      const mag = Math.hypot(s.dirX, s.dirY);
+      expect(mag).toBeCloseTo(1, 5);
+      // 下向きに流れる
+      expect(s.dirY).toBeGreaterThan(0);
+      expect(s.life).toBeGreaterThan(0);
+    }
+  });
+
+  it('spawns on the opposite side of its travel direction so it can cross the screen', () => {
+    for (let i = 0; i < 40; i++) {
+      const s = spawnShootingStar();
+      if (s.dirX > 0) {
+        // 右へ流れるなら左寄りから始まる
+        expect(s.x).toBeLessThan(0.55);
+      } else {
+        // 左へ流れるなら右寄りから始まる
+        expect(s.x).toBeGreaterThan(0.45);
+      }
+    }
+  });
+});
+
+describe('updateShootingStars', () => {
+  it('advances position along the direction vector', () => {
+    const star: ShootingStar = {
+      x: 0.2,
+      y: 0.1,
+      dirX: 1,
+      dirY: 0.5,
+      speed: 0.001,
+      tailLength: 0.2,
+      age: 0,
+      life: 1000,
+    };
+    const [moved] = updateShootingStars([star], 100, 400);
+    expect(moved.x).toBeGreaterThan(0.2);
+    expect(moved.y).toBeGreaterThan(0.1);
+    expect(moved.age).toBe(100);
+  });
+
+  it('removes stars whose life has ended', () => {
+    const star: ShootingStar = {
+      x: 0.5,
+      y: 0.5,
+      dirX: 1,
+      dirY: 0,
+      speed: 0.001,
+      tailLength: 0.2,
+      age: 990,
+      life: 1000,
+    };
+    const result = updateShootingStars([star], 50, 400);
+    expect(result).toHaveLength(0);
+  });
+
+  it('removes stars that have left the screen', () => {
+    const star: ShootingStar = {
+      x: 1.15,
+      y: 0.5,
+      dirX: 1,
+      dirY: 0,
+      speed: 0.01,
+      tailLength: 0.2,
+      age: 100,
+      life: 5000,
+    };
+    const result = updateShootingStars([star], 50, 400);
+    expect(result).toHaveLength(0);
+  });
+});
