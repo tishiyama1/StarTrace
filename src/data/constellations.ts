@@ -1,17 +1,23 @@
 import type { Constellation } from '../types';
 
 /**
- * 12星座のお手本形状データ。
+ * 星座のお手本形状データ。
  * 実際の天文学的な星の位置ではなく、子供が指でなぞって再現しやすいように
  * 特徴を誇張して単純化したシルエットとして定義している。
+ *
+ * `category` が `real` のものは実在の星座、`fun` のものはこのアプリ
+ * オリジナルの「おはなしの星座」(非実在のふざけた星座)。
  * 詳細は docs/constellation-data.md を参照。
  */
 export const CONSTELLATIONS: Constellation[] = [
+  // ───────────────────────── 実在の星座 ─────────────────────────
   {
     id: 'ursa-major',
     nameJa: 'おおぐま座(北斗七星)',
     nameEn: 'Big Dipper (Ursa Major)',
     latinName: 'Ursa Major',
+    category: 'real',
+    emoji: '🐻',
     description:
       '大きなクマの形をした星座だよ。7つの明るい星が、水をくむ「ひしゃく」のように並んでいるよ。',
     path: [
@@ -29,6 +35,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'こぐま座',
     nameEn: 'Little Dipper (Ursa Minor)',
     latinName: 'Ursa Minor',
+    category: 'real',
+    emoji: '🧸',
     description: '小さなクマの星座だよ。ひしゃくの柄の先っぽに、北をおしえてくれる北極星があるよ。',
     path: [
       { x: 35, y: 8 },
@@ -45,6 +53,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'カシオペヤ座',
     nameEn: 'Cassiopeia',
     latinName: 'Cassiopeia',
+    category: 'real',
+    emoji: '👑',
     description: 'アルファベットの「W」のように見える、5つの星がジグザグに並ぶ星座だよ。',
     path: [
       { x: 8, y: 60 },
@@ -59,6 +69,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'オリオン座',
     nameEn: 'Orion',
     latinName: 'Orion',
+    category: 'real',
+    emoji: '🏹',
     description: '3つ並んだ星が「ベルト」に見える、冬の夜空でいちばん目立つ星座だよ。',
     path: [
       { x: 15, y: 10 },
@@ -74,6 +86,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'さそり座',
     nameEn: 'Scorpius',
     latinName: 'Scorpius',
+    category: 'real',
+    emoji: '🦂',
     description: 'さそりのしっぽのように、先っぽがくるんと丸まった形の星座だよ。',
     path: [
       { x: 8, y: 15 },
@@ -91,6 +105,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'はくちょう座(北十字)',
     nameEn: 'Northern Cross (Cygnus)',
     latinName: 'Cygnus',
+    category: 'real',
+    emoji: '🦢',
     description: '羽を広げて飛ぶ白鳥の形の星座だよ。星をつなぐと大きな十字架のように見えるよ。',
     path: [
       { x: 50, y: 10 },
@@ -107,6 +123,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'こと座',
     nameEn: 'Lyra',
     latinName: 'Lyra',
+    category: 'real',
+    emoji: '🎵',
     description: '小さな竪琴(たてごと)の形をした星座だよ。夏の夜空で明るく光る星「ベガ」があるよ。',
     path: [
       { x: 50, y: 10 },
@@ -121,6 +139,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'わし座',
     nameEn: 'Aquila',
     latinName: 'Aquila',
+    category: 'real',
+    emoji: '🦅',
     description: '大きな翼を広げたワシの形の星座だよ。彦星(ひこぼし)として知られる星「アルタイル」があるよ。',
     path: [
       { x: 15, y: 50 },
@@ -135,6 +155,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'ふたご座',
     nameEn: 'Gemini',
     latinName: 'Gemini',
+    category: 'real',
+    emoji: '👯',
     description: '仲よしの双子が頭をよせて並んで立っているような形の星座だよ。',
     path: [
       { x: 15, y: 90 },
@@ -150,6 +172,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'おうし座',
     nameEn: 'Taurus',
     latinName: 'Taurus',
+    category: 'real',
+    emoji: '🐂',
     description: '大きな角を持つ牛の顔の形をした星座だよ。',
     path: [
       { x: 10, y: 10 },
@@ -164,6 +188,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'しし座',
     nameEn: 'Leo',
     latinName: 'Leo',
+    category: 'real',
+    emoji: '🦁',
     description: 'ライオンが寝そべっているような形の星座だよ。「?」マークに似た頭の部分が目印だよ。',
     path: [
       { x: 15, y: 20 },
@@ -180,6 +206,8 @@ export const CONSTELLATIONS: Constellation[] = [
     nameJa: 'ペガスス座(秋の四辺形)',
     nameEn: 'Great Square of Pegasus',
     latinName: 'Pegasus',
+    category: 'real',
+    emoji: '🐴',
     description: '空飛ぶ天馬(てんま)ペガススの星座だよ。4つの星でできた大きな四角形が目印だよ。',
     path: [
       { x: 20, y: 20 },
@@ -187,6 +215,204 @@ export const CONSTELLATIONS: Constellation[] = [
       { x: 80, y: 80 },
       { x: 20, y: 80 },
       { x: 20, y: 20 },
+    ],
+  },
+  {
+    id: 'cepheus',
+    nameJa: 'ケフェウス座',
+    nameEn: 'Cepheus',
+    latinName: 'Cepheus',
+    category: 'real',
+    emoji: '🏠',
+    description: 'おうさまの星座だよ。とんがりやねの おうちのような五角形の形をしているよ。',
+    path: [
+      { x: 25, y: 82 },
+      { x: 25, y: 45 },
+      { x: 50, y: 22 },
+      { x: 75, y: 45 },
+      { x: 75, y: 82 },
+      { x: 25, y: 82 },
+    ],
+  },
+  {
+    id: 'delphinus',
+    nameJa: 'いるか座',
+    nameEn: 'Delphinus',
+    latinName: 'Delphinus',
+    category: 'real',
+    emoji: '🐬',
+    description: '小さないるかが とびはねているような星座だよ。ダイヤのような形に しっぽがついているよ。',
+    path: [
+      { x: 44, y: 40 },
+      { x: 58, y: 30 },
+      { x: 72, y: 44 },
+      { x: 58, y: 56 },
+      { x: 44, y: 40 },
+      { x: 30, y: 70 },
+    ],
+  },
+
+  // ─────────────────────── おはなしの星座 ───────────────────────
+  {
+    id: 'mona-lisa',
+    nameJa: 'モナリザ座',
+    nameEn: 'Mona Lisa',
+    latinName: 'Gioconda',
+    category: 'fun',
+    emoji: '🖼️',
+    description:
+      'なぞの ほほえみで ゆうめいな「モナリザ」の星座だよ。うずまきみたいに くるくる まわる ふしぎな形なんだって!',
+    path: [
+      { x: 52, y: 50 },
+      { x: 62, y: 50 },
+      { x: 62, y: 62 },
+      { x: 40, y: 62 },
+      { x: 40, y: 38 },
+      { x: 72, y: 38 },
+      { x: 72, y: 74 },
+      { x: 28, y: 74 },
+      { x: 28, y: 26 },
+      { x: 82, y: 26 },
+    ],
+  },
+  {
+    id: 'heart',
+    nameJa: 'ハート座',
+    nameEn: 'Heart',
+    latinName: 'Cor',
+    category: 'fun',
+    emoji: '❤️',
+    description: 'だいすきの きもちが かたちになった ハートの星座だよ。だれかに おしえてあげたくなるね!',
+    path: [
+      { x: 50, y: 28 },
+      { x: 38, y: 15 },
+      { x: 22, y: 18 },
+      { x: 16, y: 32 },
+      { x: 28, y: 52 },
+      { x: 50, y: 74 },
+      { x: 72, y: 52 },
+      { x: 84, y: 32 },
+      { x: 78, y: 18 },
+      { x: 62, y: 15 },
+      { x: 50, y: 28 },
+    ],
+  },
+  {
+    id: 'cat',
+    nameJa: 'ネコ座',
+    nameEn: 'Cat',
+    latinName: 'Felis',
+    category: 'fun',
+    emoji: '🐱',
+    description: 'ぴんと たった 2つの みみが かわいい ネコの星座だよ。「ニャー」と ないてるのかな?',
+    path: [
+      { x: 26, y: 52 },
+      { x: 30, y: 22 },
+      { x: 44, y: 42 },
+      { x: 56, y: 42 },
+      { x: 70, y: 22 },
+      { x: 74, y: 52 },
+      { x: 64, y: 78 },
+      { x: 36, y: 78 },
+      { x: 26, y: 52 },
+    ],
+  },
+  {
+    id: 'rocket',
+    nameJa: 'ロケット座',
+    nameEn: 'Rocket',
+    latinName: 'Missile',
+    category: 'fun',
+    emoji: '🚀',
+    description: 'そらを めざして とびたつ ロケットの星座だよ。3、2、1、はっしゃ! うちゅうへ しゅっぱつ!',
+    path: [
+      { x: 50, y: 8 },
+      { x: 63, y: 42 },
+      { x: 82, y: 60 },
+      { x: 60, y: 58 },
+      { x: 52, y: 92 },
+      { x: 48, y: 92 },
+      { x: 40, y: 58 },
+      { x: 18, y: 60 },
+      { x: 37, y: 42 },
+      { x: 50, y: 8 },
+    ],
+  },
+  {
+    id: 'ramen',
+    nameJa: 'ラーメン座',
+    nameEn: 'Ramen',
+    latinName: 'Ramen',
+    category: 'fun',
+    emoji: '🍜',
+    description: 'ゆげが ほかほか、おいしい ラーメンの星座だよ。よぞらに うかぶ どんぶりが みえるかな?',
+    path: [
+      { x: 38, y: 10 },
+      { x: 48, y: 22 },
+      { x: 38, y: 34 },
+      { x: 48, y: 46 },
+      { x: 14, y: 52 },
+      { x: 28, y: 86 },
+      { x: 72, y: 86 },
+      { x: 86, y: 52 },
+    ],
+  },
+  {
+    id: 'lightning',
+    nameJa: 'カミナリ座',
+    nameEn: 'Lightning',
+    latinName: 'Fulmen',
+    category: 'fun',
+    emoji: '⚡',
+    description: 'ピカッと ひかる カミナリの星座だよ。ギザギザの かたちが かっこいいね!',
+    path: [
+      { x: 30, y: 8 },
+      { x: 62, y: 8 },
+      { x: 42, y: 44 },
+      { x: 68, y: 44 },
+      { x: 28, y: 92 },
+    ],
+  },
+  {
+    id: 'ghost',
+    nameJa: 'おばけ座',
+    nameEn: 'Ghost',
+    latinName: 'Phantasma',
+    category: 'fun',
+    emoji: '👻',
+    description: 'ふわふわ ういている おばけの星座だよ。したの ぎざぎざが ゆれてる みたいで かわいいね!',
+    path: [
+      { x: 28, y: 24 },
+      { x: 28, y: 82 },
+      { x: 40, y: 70 },
+      { x: 50, y: 82 },
+      { x: 60, y: 70 },
+      { x: 72, y: 82 },
+      { x: 72, y: 24 },
+      { x: 60, y: 14 },
+      { x: 40, y: 14 },
+      { x: 28, y: 24 },
+    ],
+  },
+  {
+    id: 'mushroom',
+    nameJa: 'キノコ座',
+    nameEn: 'Mushroom',
+    latinName: 'Fungus',
+    category: 'fun',
+    emoji: '🍄',
+    description: 'まるい かさが かわいい キノコの星座だよ。もりの なかに はえてそうだね!',
+    path: [
+      { x: 18, y: 46 },
+      { x: 30, y: 24 },
+      { x: 50, y: 16 },
+      { x: 70, y: 24 },
+      { x: 82, y: 46 },
+      { x: 60, y: 46 },
+      { x: 60, y: 82 },
+      { x: 40, y: 82 },
+      { x: 40, y: 46 },
+      { x: 18, y: 46 },
     ],
   },
 ];

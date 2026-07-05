@@ -1,25 +1,18 @@
 import { useEffect, useRef } from 'react';
 import type { Point } from '../types';
-
-interface BackgroundStar {
-  x: number;
-  y: number;
-  radius: number;
-  baseOpacity: number;
-  twinkleSpeed: number;
-  twinklePhaseOffset: number;
-}
-
-function generateBackgroundStars(count: number): BackgroundStar[] {
-  return Array.from({ length: count }, () => ({
-    x: Math.random(),
-    y: Math.random(),
-    radius: Math.random() * 1.4 + 0.6,
-    baseOpacity: Math.random() * 0.5 + 0.4,
-    twinkleSpeed: Math.random() * 0.0015 + 0.0004,
-    twinklePhaseOffset: Math.random() * Math.PI * 2,
-  }));
-}
+import {
+  drawBackgroundStars,
+  drawMilkyWayBand,
+  drawMilkyWayStars,
+  drawNebulae,
+  drawShootingStars,
+  generateBackgroundStars,
+  generateMilkyWayStars,
+  generateNebulae,
+  spawnShootingStar,
+  updateShootingStars,
+  type ShootingStar,
+} from '../lib/skyEffects';
 
 interface PointerHandlers {
   onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
@@ -37,6 +30,9 @@ interface SkyCanvasProps {
   pointerHandlers: PointerHandlers;
 }
 
+/** 天の川の帯の傾き(ラジアン) */
+const MILKY_WAY_ANGLE = Math.PI * 0.14;
+
 export function SkyCanvas({
   width,
   height,
@@ -46,7 +42,17 @@ export function SkyCanvas({
   pointerHandlers,
 }: SkyCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const starsRef = useRef<BackgroundStar[]>(generateBackgroundStars(150));
+
+  // 静的に生成する天体は初回だけ作る(座標は 0〜1 正規化なのでリサイズ非依存)
+  const starsRef = useRef(generateBackgroundStars(170));
+  const milkyWayStarsRef = useRef(generateMilkyWayStars(230, MILKY_WAY_ANGLE));
+  const nebulaeRef = useRef(generateNebulae());
+
+  // 流れ星は動的に管理
+  const shootingStarsRef = useRef<ShootingStar[]>([]);
+  const nextSpawnRef = useRef<number>(1800);
+  const lastTimeRef = useRef<number>(0);
+
   const strokeRef = useRef<Point[]>(currentStroke);
   const overlayRef = useRef<Point[] | null>(overlayPoints);
   const animationFrameRef = useRef<number>(0);
@@ -73,6 +79,8 @@ export function SkyCanvas({
     canvas.style.height = `${height}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    const minDim = Math.min(width, height);
+
     function drawStrokePath(ctx: CanvasRenderingContext2D, points: Point[]) {
       ctx.beginPath();
       points.forEach((p, i) => {
@@ -83,22 +91,33 @@ export function SkyCanvas({
     }
 
     function frame(time: number) {
-      ctx.clearRect(0, 0, width, height);
+      const dt = lastTimeRef.current === 0 ? 16 : Math.min(64, time - lastTimeRef.current);
+      lastTimeRef.current = time;
 
+      // 背景のグラデーション
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#050818');
-      gradient.addColorStop(1, '#151a42');
+      gradient.addColorStop(0, '#04040f');
+      gradient.addColorStop(0.55, '#0b0f2b');
+      gradient.addColorStop(1, '#161436');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      for (const star of starsRef.current) {
-        const twinkle = 0.5 + 0.5 * Math.sin(time * star.twinkleSpeed + star.twinklePhaseOffset);
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.baseOpacity * twinkle})`;
-        ctx.arc(star.x * width, star.y * height, star.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // 星雲 → 天の川 → 星の順で奥から手前へ描く
+      drawNebulae(ctx, nebulaeRef.current, width, height, time);
+      drawMilkyWayBand(ctx, width, height, MILKY_WAY_ANGLE);
+      drawMilkyWayStars(ctx, milkyWayStarsRef.current, width, height);
+      drawBackgroundStars(ctx, starsRef.current, width, height, time);
 
+      // 流れ星のスポーンと更新
+      nextSpawnRef.current -= dt;
+      if (nextSpawnRef.current <= 0 && shootingStarsRef.current.length < 2) {
+        shootingStarsRef.current.push(spawnShootingStar());
+        nextSpawnRef.current = 3500 + Math.random() * 5000;
+      }
+      shootingStarsRef.current = updateShootingStars(shootingStarsRef.current, dt, minDim);
+      drawShootingStars(ctx, shootingStarsRef.current, width, height);
+
+      // お手本ライン(結果表示時)
       const overlay = overlayRef.current;
       if (overlay && overlay.length > 1) {
         ctx.save();
@@ -117,6 +136,7 @@ export function SkyCanvas({
         ctx.restore();
       }
 
+      // ユーザーがなぞっている光る線
       const stroke = strokeRef.current;
       if (stroke.length > 1) {
         ctx.save();

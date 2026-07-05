@@ -3,37 +3,62 @@ import type { MatchResult } from '../types';
 
 interface ResultOverlayProps {
   result: MatchResult;
+  /** この結果ではじめて図鑑に登録された(新発見)かどうか */
+  isNewDiscovery: boolean;
   onRetry: () => void;
+  onOpenZukan: () => void;
 }
 
-export function ResultOverlay({ result, onRetry }: ResultOverlayProps) {
+const CATEGORY_BADGE: Record<MatchResult['constellation']['category'], string> = {
+  real: 'ほんとうの せいざ',
+  fun: 'おはなしの せいざ',
+};
+
+export function ResultOverlay({ result, isNewDiscovery, onRetry, onOpenZukan }: ResultOverlayProps) {
   const scoreRounded = Math.round(result.score);
+  const { constellation } = result;
 
   return (
-    <div className="result-panel">
-      <p className="result-panel__badge">この せいざに にてるよ!</p>
-      <h2 className="result-panel__name">{result.constellation.nameJa}</h2>
-      <p className="result-panel__sub">
-        {result.constellation.nameEn} ({result.constellation.latinName})
-      </p>
+    <div className={`result-panel${isNewDiscovery ? ' result-panel--new' : ''}`}>
+      {isNewDiscovery && (
+        <div className="result-panel__new-ribbon" role="status">
+          ✨ ずかんに とうろく! ✨
+        </div>
+      )}
 
-      <ConstellationDiagram path={result.constellation.path} />
-      <p className="result-panel__description">{result.constellation.description}</p>
+      <p className="result-panel__badge">この せいざに にてるよ!</p>
+      <h2 className="result-panel__name">
+        <span className="result-panel__name-emoji" aria-hidden="true">
+          {constellation.emoji}
+        </span>
+        {constellation.nameJa}
+      </h2>
+      <p className="result-panel__sub">
+        {constellation.nameEn} ({constellation.latinName})
+      </p>
+      <span className={`result-panel__category result-panel__category--${constellation.category}`}>
+        {CATEGORY_BADGE[constellation.category]}
+      </span>
+
+      <ConstellationDiagram path={constellation.path} />
+      <p className="result-panel__description">{constellation.description}</p>
 
       <div className="result-panel__score">
         <span className="result-panel__score-label">にてる ど</span>
         <div className="result-panel__score-bar">
-          <div
-            className="result-panel__score-fill"
-            style={{ width: `${scoreRounded}%` }}
-          />
+          <div className="result-panel__score-fill" style={{ width: `${scoreRounded}%` }} />
         </div>
         <span className="result-panel__score-value">{scoreRounded}%</span>
       </div>
 
-      <button type="button" className="result-panel__retry" onClick={onRetry}>
-        もういちど なぞる
-      </button>
+      <div className="result-panel__actions">
+        <button type="button" className="result-panel__retry" onClick={onRetry}>
+          もういちど なぞる
+        </button>
+        <button type="button" className="result-panel__zukan" onClick={onOpenZukan}>
+          📖 ずかん
+        </button>
+      </div>
     </div>
   );
 }
