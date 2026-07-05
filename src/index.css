@@ -1,0 +1,23 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Segoe UI', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #050818;
+  overscroll-behavior: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
