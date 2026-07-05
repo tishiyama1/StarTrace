@@ -1,3 +1,4 @@
+import { ConstellationDiagram } from './ConstellationDiagram';
 import type { MatchResult } from '../types';
 
 interface ResultOverlayProps {
@@ -15,6 +16,9 @@ export function ResultOverlay({ result, onRetry }: ResultOverlayProps) {
       <p className="result-panel__sub">
         {result.constellation.nameEn} ({result.constellation.latinName})
       </p>
+
+      <ConstellationDiagram path={result.constellation.path} />
+      <p className="result-panel__description">{result.constellation.description}</p>
 
       <div className="result-panel__score">
         <span className="result-panel__score-label">にてる ど</span>
