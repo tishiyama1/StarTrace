@@ -71,12 +71,28 @@ aws cloudformation describe-stacks --region ap-northeast-1 \
 
 ローカルからワンコマンドで、ビルド → S3 同期 → CloudFront 無効化まで行います。
 
+**Mac / Linux / Git Bash / WSL:**
+
 ```bash
 ./infra/deploy.sh
 ```
 
+**Windows PowerShell:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra/deploy.ps1
+```
+
 `SiteURL`(`https://xxxx.cloudfront.net`)を開くと StarTrace が表示されます。
 新規ディストリビューションは初回のみ数分で世界中に展開されます。
+
+> **Windows での注意**
+> - `aws cloudformation deploy ...`(手順1)は改行の `\` を消して **1行**で貼ってください。
+>   PowerShell では `\` は改行つなぎになりません。
+> - `.sh` は bash 用です。PowerShell では上の `deploy.ps1` を使ってください
+>   (Git Bash / WSL なら `deploy.sh` でも動きます)。
+> - 事前に AWS CLI と Node.js が必要です(`aws --version` と `node --version` で確認)。
+>   認証情報は `aws configure` で設定しておきます。
 
 ### 3. GitHub Actions で自動デプロイ(任意)
 
