@@ -26,6 +26,25 @@ npm run test    # 単体テスト (Vitest)
 npm run lint    # ESLint
 ```
 
+## デプロイ (AWS S3 + CloudFront)
+
+非公開の S3 バケット + CloudFront で配信します。IaC(CloudFormation)一式は `infra/` にあります。
+
+```bash
+# 1. インフラ作成(初回のみ)
+aws cloudformation deploy \
+  --region ap-northeast-1 --stack-name startrace \
+  --template-file infra/cloudformation.yaml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides GitHubOwner=tishiyama1 GitHubRepo=StarTrace GitHubBranch=main
+
+# 2. コンテンツをデプロイ(ビルド → S3同期 → CloudFront無効化)
+./infra/deploy.sh
+```
+
+main への push で GitHub Actions が自動デプロイします(OIDC 認証)。
+詳しい手順は [infra/README.md](infra/README.md)、設計判断は [docs/deployment.md](docs/deployment.md) を参照。
+
 ## 設計ドキュメント
 
 - [要求仕様書](docs/requirements.md)
@@ -34,3 +53,4 @@ npm run lint    # ESLint
 - [形状マッチングアルゴリズム設計書](docs/matching-algorithm.md)
 - [図鑑機能 設計書](docs/zukan-feature.md)
 - [夜空ビジュアル 設計書](docs/visuals.md)
+- [デプロイ設計書 (AWS)](docs/deployment.md)
