@@ -1,0 +1,55 @@
+name: Deploy to AWS (S3 + CloudFront)
+
+# Deploys the built site whenever main changes, or on demand.
+# Uses GitHub OIDC to assume an IAM role — no long-lived AWS keys in GitHub.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Avoid overlapping deploys stepping on each other.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write # required to request the OIDC token
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+  STACK_NAME: startrace
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3 + CloudFront
+        run: SKIP_BUILD=1 ./infra/deploy.sh
+        env:
+          STACK_NAME: ${{ env.STACK_NAME }}
+          AWS_REGION: ${{ env.AWS_REGION }}
