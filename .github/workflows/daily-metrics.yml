@@ -1,0 +1,113 @@
+name: Daily metrics report
+
+# 毎朝、利用状況・フィードバック・エラーを DynamoDB から集めて
+# GitHub Issue(label: metrics)として投稿する。
+# 9:00 JST の改善提案 Routine(Claude)がこの Issue を入力として読む。
+on:
+  schedule:
+    - cron: '30 23 * * *' # 23:30 UTC = 08:30 JST
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  AWS_REGION: ap-northeast-1
+  STACK_NAME: startrace
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Collect metrics and create issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          TABLE="$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='DataTableName'].OutputValue" \
+            --output text)"
+
+          TODAY_JST="$(TZ=Asia/Tokyo date +%Y-%m-%d)"
+
+          # ---- 全体統計 --------------------------------------------------
+          TOTALS="$(aws dynamodb get-item --table-name "$TABLE" --region "$AWS_REGION" \
+            --key '{"pk":{"S":"STATS"},"sk":{"S":"TOTAL"}}' --output json)"
+          USERS="$(echo "$TOTALS" | jq -r '.Item.users.N // "0"')"
+          DISCOVERIES="$(echo "$TOTALS" | jq -r '.Item.discoveries.N // "0"')"
+
+          # ---- 星座別 発見数 上位 ---------------------------------------
+          CONST="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+            --key-condition-expression "pk = :p" \
+            --expression-attribute-values '{":p":{"S":"CONST"}}' --output json \
+            | jq -r '.Items | sort_by(-(.count.N|tonumber)) | .[:10][] | "| \(.sk.S) | \(.count.N) |"')"
+
+          # ---- 利用イベント(直近7日ぶんの日次カウンタ) -------------------
+          EVENTS="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+            --key-condition-expression "pk = :p" \
+            --expression-attribute-values '{":p":{"S":"EVENT"}}' --output json \
+            | jq -r --arg cutoff "$(TZ=UTC date -d '7 days ago' +%Y-%m-%d)" \
+              '.Items | map(select(.sk.S >= $cutoff)) | sort_by(.sk.S) | reverse | .[] | "| \(.sk.S | split("#")[0]) | \(.sk.S | split("#")[1]) | \(.count.N) |"')"
+
+          # ---- 未処理フィードバック --------------------------------------
+          FEEDBACK="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+            --key-condition-expression "pk = :p" \
+            --filter-expression "issueCreated = :f" \
+            --expression-attribute-values '{":p":{"S":"FEEDBACK"},":f":{"BOOL":false}}' \
+            --output json \
+            | jq -r '.Items | sort_by(.sk.S) | reverse | .[:15][] | "- [\(.category.S)] \(.message.S | gsub("\n"; " "))"')"
+
+          # ---- 直近のエラー ----------------------------------------------
+          ERRORS="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+            --key-condition-expression "pk = :p" \
+            --expression-attribute-values '{":p":{"S":"ERROR"}}' \
+            --scan-index-forward false --max-items 10 --output json \
+            | jq -r '.Items[] | "- `\(.createdAt.S)` \(.message.S | gsub("\n"; " ")) (ua: \(.ua.S[:60]))"')"
+
+          BODY=$(cat <<MD
+          ## 📊 StarTrace 日次メトリクス ($TODAY_JST)
+
+          ### 全体
+          | 指標 | 値 |
+          |---|---|
+          | さがした人数(累計) | $USERS |
+          | 発見ごうけい(累計) | $DISCOVERIES |
+
+          ### 利用イベント(直近7日・日次)
+          | 日付 | イベント | 回数 |
+          |---|---|---|
+          ${EVENTS:-| - | データなし | - |}
+
+          ### 星座別 発見数 上位
+          | 星座 | 回数 |
+          |---|---|
+          ${CONST:-| データなし | - |}
+
+          ### 未処理フィードバック(最新15件)
+          ${FEEDBACK:-なし}
+
+          ### 直近のエラー(最大10件)
+          ${ERRORS:-なし}
+
+          ---
+          このIssueは \`daily-metrics\` ワークフローによる自動投稿です。
+          9:00 JST の改善提案 Routine がこのデータを入力として使います。
+          MD
+          )
+
+          gh label create metrics --color 5319E7 --description "自動収集メトリクス" 2>/dev/null || true
+          gh issue create \
+            --title "📊 日次メトリクス $TODAY_JST" \
+            --label metrics \
+            --body "$BODY"

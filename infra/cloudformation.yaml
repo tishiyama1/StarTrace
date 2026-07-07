@@ -289,6 +289,10 @@ Resources:
         SSEEnabled: true
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        # エラーサンプルは expiresAt(エポック秒)で30日後に自動削除される
+        AttributeName: expiresAt
+        Enabled: true
 
   # --- Lambda execution role ----------------------------------------------
   ApiFunctionRole:
@@ -395,6 +399,20 @@ Resources:
     Properties:
       ApiId: !Ref DataApi
       RouteKey: 'POST /api/feedback'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteEvent:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'POST /api/event'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteError:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'POST /api/error'
       Target: !Sub 'integrations/${ApiIntegration}'
 
   ApiStage:

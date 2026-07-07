@@ -13,6 +13,7 @@ import { useViewportSize } from './hooks/useViewportSize';
 import { useDiscoveries } from './hooks/useDiscoveries';
 import { useClientId } from './hooks/useClientId';
 import { recordDiscovery } from './lib/api';
+import { installErrorReporter, sendEvent } from './lib/telemetry';
 import {
   DISCOVERY_SCORE_THRESHOLD,
   NOT_FOUND_SCORE_THRESHOLD,
@@ -49,6 +50,11 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // 未捕捉エラーの自動報告(改善ループの入力になる)
+  useEffect(() => {
+    installErrorReporter(clientId);
+  }, [clientId]);
+
   const handleStrokeEnd = useCallback(
     (stroke: Point[]) => {
       const diagonal = Math.hypot(width, height);
@@ -62,6 +68,7 @@ function App() {
       // どの星座にも十分似ていない場合は「みつからないね」演出にする
       // (適当ななぐり書きでも必ず何かがヒットしてしまうのを防ぐ)。
       if (matchResult.score < NOT_FOUND_SCORE_THRESHOLD) {
+        sendEvent('trace_notfound', clientId);
         setNotFound(true);
         setResult(null);
         setOverlayPoints(null);
@@ -69,6 +76,8 @@ function App() {
         setHint(null);
         return;
       }
+
+      sendEvent('trace_hit', clientId);
 
       const overlay = getOverlayPoints(stroke, matchResult.constellation);
 
@@ -114,7 +123,10 @@ function App() {
           <button
             type="button"
             className="nav-button nav-button--count"
-            onClick={() => setShowZukan(true)}
+            onClick={() => {
+              sendEvent('zukan_open', clientId);
+              setShowZukan(true);
+            }}
             aria-label="ほしぞら ずかんを ひらく"
           >
             <span className="nav-button__icon" aria-hidden="true">📖</span>
@@ -125,7 +137,10 @@ function App() {
           <button
             type="button"
             className="nav-button"
-            onClick={() => setShowDashboard(true)}
+            onClick={() => {
+              sendEvent('dashboard_open', clientId);
+              setShowDashboard(true);
+            }}
             aria-label="みんなの ほしぞらを みる"
           >
             <span className="nav-button__icon" aria-hidden="true">🌍</span>
@@ -133,7 +148,10 @@ function App() {
           <button
             type="button"
             className="nav-button"
-            onClick={() => setShowFeedback(true)}
+            onClick={() => {
+              sendEvent('feedback_open', clientId);
+              setShowFeedback(true);
+            }}
             aria-label="いけんを おくる"
           >
             <span className="nav-button__icon" aria-hidden="true">💌</span>
