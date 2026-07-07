@@ -121,6 +121,24 @@ Resources:
             S3OriginConfig:
               # Must be empty when using OAC.
               OriginAccessIdentity: ''
+          - Id: ApiOrigin
+            DomainName: !Sub '${DataApi}.execute-api.${AWS::Region}.amazonaws.com'
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols: [TLSv1.2]
+        # /api/* is served by the HTTP API (dynamic, never cached). Everything
+        # else is served from S3. Same-origin means the frontend just calls
+        # "/api/..." with no CORS and no build-time API URL.
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            # AWS managed policies: CachingDisabled + AllViewerExceptHostHeader
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           ViewerProtocolPolicy: redirect-to-https
@@ -236,6 +254,167 @@ Resources:
                   - cloudfront:CreateInvalidation
                   - cloudfront:GetInvalidation
                 Resource: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+              - Sid: UpdateBackendLambda
+                Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionCode
+                  - lambda:GetFunction
+                Resource: !GetAtt ApiFunction.Arn
+              - Sid: ReadWriteFeedbackForIssueSync
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt DataTable.Arn
+
+  # --- DynamoDB: aggregate counters + feedback ----------------------------
+  DataTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub '${ProjectName}-data'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # --- Lambda execution role ----------------------------------------------
+  ApiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-api-fn'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: logs-and-dynamodb
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Logs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-api:*'
+              - Sid: DynamoDbAccess
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource: !GetAtt DataTable.Arn
+
+  # --- Lambda function -----------------------------------------------------
+  # Created with a placeholder body; the real code in backend/ is pushed by the
+  # deploy pipeline via `aws lambda update-function-code`.
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-api'
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ApiFunctionRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DataTable
+      Code:
+        ZipFile: |
+          export const handler = async () => ({
+            statusCode: 503,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ error: 'backend not deployed yet' }),
+          });
+
+  ApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-api'
+      RetentionInDays: 30
+
+  # --- HTTP API (API Gateway v2) ------------------------------------------
+  DataApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${ProjectName}-api'
+      ProtocolType: HTTP
+
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DataApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  RouteStats:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'GET /api/stats'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteVisit:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'POST /api/visit'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteDiscovery:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'POST /api/discovery'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  RouteFeedback:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DataApi
+      RouteKey: 'POST /api/feedback'
+      Target: !Sub 'integrations/${ApiIntegration}'
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref DataApi
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings:
+        # Basic throttling to blunt abuse of the public endpoints.
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${DataApi}/*/*'
 
 # ---------------------------------------------------------------------------
 # Outputs
@@ -268,3 +447,19 @@ Outputs:
     Value: !GetAtt GitHubDeployRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-GitHubDeployRoleArn'
+
+  ApiFunctionName:
+    Description: Backend Lambda function name (deploy pipeline pushes code here).
+    Value: !Ref ApiFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiFunctionName'
+
+  DataTableName:
+    Description: DynamoDB table holding stats and feedback.
+    Value: !Ref DataTable
+    Export:
+      Name: !Sub '${AWS::StackName}-DataTableName'
+
+  ApiEndpoint:
+    Description: Direct HTTP API endpoint (normally accessed via CloudFront /api/*).
+    Value: !GetAtt DataApi.ApiEndpoint

@@ -31,9 +31,10 @@ function Get-StackOutput([string]$Key) {
 }
 
 Write-Host "==> Reading stack outputs from '$StackName' ($Region)"
-$bucket  = Get-StackOutput 'BucketName'
-$distId  = Get-StackOutput 'DistributionId'
-$siteUrl = Get-StackOutput 'SiteURL'
+$bucket   = Get-StackOutput 'BucketName'
+$distId   = Get-StackOutput 'DistributionId'
+$siteUrl  = Get-StackOutput 'SiteURL'
+$apiFn    = Get-StackOutput 'ApiFunctionName'
 
 if (-not $bucket -or $bucket -eq 'None') {
   Write-Error "Could not read BucketName from stack '$StackName'. Deploy the stack first (see infra/README.md)."
@@ -42,6 +43,7 @@ if (-not $bucket -or $bucket -eq 'None') {
 
 Write-Host "    bucket       = $bucket"
 Write-Host "    distribution = $distId"
+Write-Host "    api function = $apiFn"
 
 if (-not $SkipBuild) {
   Write-Host "==> Building the site"
@@ -52,6 +54,16 @@ if (-not $SkipBuild) {
 if (-not (Test-Path 'dist/index.html')) {
   Write-Error "dist/index.html not found. Did the build succeed?"
   exit 1
+}
+
+# --- Backend Lambda: package backend/ and push the code -------------------
+if ($apiFn -and $apiFn -ne 'None') {
+  Write-Host "==> Packaging and updating the backend Lambda"
+  $zipPath = Join-Path ([System.IO.Path]::GetTempPath()) 'startrace-function.zip'
+  if (Test-Path $zipPath) { Remove-Item $zipPath }
+  Compress-Archive -Path 'backend/index.mjs' -DestinationPath $zipPath -Force
+  aws lambda update-function-code --function-name $apiFn --zip-file "fileb://$zipPath" --region $Region --no-cli-pager | Out-Null
+  Remove-Item $zipPath -ErrorAction SilentlyContinue
 }
 
 Write-Host "==> Uploading hashed assets with a long cache lifetime"

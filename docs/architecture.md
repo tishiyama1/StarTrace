@@ -43,16 +43,26 @@ StarTrace/
 │   │   ├── ResultOverlay.tsx    # 判定結果(星座名・カテゴリ・マッチ度・お手本形状・NEW演出)
 │   │   ├── ConstellationDiagram.tsx # 星座のお手本の形をSVGの線画で表示
 │   │   ├── Zukan.tsx            # ほしぞら図鑑(発見一覧・進捗・カテゴリ絞り込み)
+│   │   ├── Dashboard.tsx        # みんなの集計 + 自分vsみんな比較 + 星座ランキング
+│   │   ├── FeedbackForm.tsx     # フィードバック投稿フォーム
 │   │   └── Header.tsx           # タイトル・遊び方の簡単な案内
 │   └── hooks/
 │       ├── useStrokeInput.ts    # マウス/タッチ入力を1本のストローク(Point[])に変換
 │       ├── useViewportSize.ts   # ビューポートサイズの追従
-│       └── useDiscoveries.ts    # 発見済み星座を localStorage で永続管理
+│       ├── useDiscoveries.ts    # 発見済み星座を localStorage で永続管理
+│       └── useClientId.ts       # 匿名クライアントIDの発行と初回訪問の登録
+│   └── lib/ … api.ts            # 共有バックエンドAPIクライアント(/api)
+├── backend/
+│   └── index.mjs               # 集計・フィードバックAPIのLambdaハンドラ(Node.js)
+├── infra/                      # AWS構成(S3+CloudFront+API Gateway+Lambda+DynamoDB)
 ├── index.html
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
 ```
+
+バックエンド(共有集計・フィードバック)の設計は `docs/backend.md` を参照。
+フロントは同一オリジンの `/api/*` を呼び、CloudFront が API Gateway に振り分ける。
 
 ## 3. データフロー
 

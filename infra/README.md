@@ -110,6 +110,30 @@ main にマージするたびに自動でビルド&デプロイされます。Gi
 > `repo:tishiyama1/StarTrace:*` からの OIDC トークンだけを信頼するので、
 > 他リポジトリからは引き受けられません。
 
+## バックエンド(集計・フィードバック)
+
+このスタックには、ダッシュボードの全体集計とフィードバック保存のための
+**API Gateway + Lambda + DynamoDB** も含まれます(設計は `docs/backend.md`)。
+
+- フロントは同一オリジンの `/api/*` を呼び、CloudFront が API Gateway に振り分けます。
+- Lambda のコード本体(`backend/index.mjs`)は、`deploy.sh` / `deploy.ps1` が
+  `aws lambda update-function-code` で反映します(手順2のデプロイに含まれます)。
+- 収集するのは匿名ID・回数・フィードバック本文のみ。個人情報は扱いません。
+
+### フィードバックの確認と GitHub Issue 化
+
+```bash
+# 溜まったフィードバックを新しい順に一覧(bash)
+./infra/list-feedback.sh
+```
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File infra/list-feedback.ps1
+```
+
+`.github/workflows/feedback-to-issues.yml` を手動実行すると、未処理のフィードバックが
+GitHub Issue になります(定期実行にするにはワークフロー内の `schedule` を有効化)。
+
 ## キャッシュ戦略
 
 - `assets/*`(Vite がファイル名にハッシュを付与)→ `max-age=31536000, immutable`
