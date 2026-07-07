@@ -1,0 +1,78 @@
+name: Feedback → GitHub Issues
+
+# Turns user feedback stored in DynamoDB into GitHub Issues so it flows
+# straight into development. Runs on demand by default; uncomment the schedule
+# block to have it run automatically.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 */6 * * *' # every 6 hours
+
+permissions:
+  id-token: write # assume the AWS role via OIDC
+  contents: read
+  issues: write # create issues from feedback
+
+env:
+  AWS_REGION: ap-northeast-1
+  STACK_NAME: startrace
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create issues from unprocessed feedback
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          TABLE="$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" --region "$AWS_REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='DataTableName'].OutputValue" \
+            --output text)"
+          echo "Table: $TABLE"
+
+          # Best-effort label so issues are easy to filter.
+          gh label create feedback --color BFD4FF --description "User feedback from StarTrace" 2>/dev/null || true
+
+          ITEMS="$(aws dynamodb query \
+            --table-name "$TABLE" --region "$AWS_REGION" \
+            --key-condition-expression "pk = :p" \
+            --filter-expression "issueCreated = :f" \
+            --expression-attribute-values '{":p":{"S":"FEEDBACK"},":f":{"BOOL":false}}' \
+            --output json)"
+
+          COUNT="$(echo "$ITEMS" | jq '.Items | length')"
+          echo "Unprocessed feedback: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Nothing to do."
+            exit 0
+          fi
+
+          echo "$ITEMS" | jq -c '.Items[]' | while read -r item; do
+            SK="$(echo "$item" | jq -r '.sk.S')"
+            MSG="$(echo "$item" | jq -r '.message.S')"
+            CAT="$(echo "$item" | jq -r '.category.S // "other"')"
+            CREATED="$(echo "$item" | jq -r '.createdAt.S // ""')"
+
+            TITLE="[ユーザーFB/${CAT}] $(echo "$MSG" | head -c 50)"
+            BODY=$(printf 'カテゴリ: **%s**\n投稿日時: %s\n\n---\n\n%s\n\n> StarTrace のフィードバックフォームから自動作成\n' "$CAT" "$CREATED" "$MSG")
+
+            URL="$(gh issue create --title "$TITLE" --body "$BODY" --label feedback)"
+            NUM="${URL##*/}"
+            echo "Created issue #$NUM for $SK"
+
+            aws dynamodb update-item \
+              --table-name "$TABLE" --region "$AWS_REGION" \
+              --key "{\"pk\":{\"S\":\"FEEDBACK\"},\"sk\":{\"S\":\"$SK\"}}" \
+              --update-expression "SET issueCreated = :t, issueNumber = :n" \
+              --expression-attribute-values "{\":t\":{\"BOOL\":true},\":n\":{\"N\":\"$NUM\"}}"
+          done

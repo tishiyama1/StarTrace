@@ -19,6 +19,8 @@ export interface Constellation {
   category: ConstellationCategory;
   /** 図鑑カードなどに添える絵文字。 */
   emoji: string;
+  /** 未発見の図鑑カードに出す、なぞる形のヒント(答えは明かしすぎない範囲で)。 */
+  hint: string;
   /** 結果画面・図鑑で表示する、子供向けの簡単な星座紹介文。 */
   description: string;
   /** なぞる順に星を直線で結んだ座標列(1ストローク分)。任意単位の 0〜100 相対座標。 */

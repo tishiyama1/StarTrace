@@ -33,6 +33,7 @@ read_output() {
 BUCKET="$(read_output BucketName)"
 DISTRIBUTION_ID="$(read_output DistributionId)"
 SITE_URL="$(read_output SiteURL)"
+API_FUNCTION="$(read_output ApiFunctionName)"
 
 if [[ -z "$BUCKET" || "$BUCKET" == "None" ]]; then
   echo "!! Could not read BucketName from stack '$STACK_NAME'." >&2
@@ -42,11 +43,25 @@ fi
 
 echo "    bucket          = $BUCKET"
 echo "    distribution    = $DISTRIBUTION_ID"
+echo "    api function    = $API_FUNCTION"
 
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
   echo "==> Building the site"
   npm ci
   npm run build
+fi
+
+# --- Backend Lambda: package backend/ and push the code -------------------
+if [[ -n "$API_FUNCTION" && "$API_FUNCTION" != "None" ]]; then
+  echo "==> Packaging and updating the backend Lambda"
+  ZIP_PATH="$(mktemp -d)/function.zip"
+  ( cd backend && zip -q -r "$ZIP_PATH" index.mjs )
+  aws lambda update-function-code \
+    --function-name "$API_FUNCTION" \
+    --zip-file "fileb://${ZIP_PATH}" \
+    --region "$AWS_REGION" \
+    --no-cli-pager >/dev/null
+  rm -f "$ZIP_PATH"
 fi
 
 if [[ ! -f dist/index.html ]]; then

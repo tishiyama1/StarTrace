@@ -4,10 +4,14 @@ import { Header } from './components/Header';
 import { ResultOverlay } from './components/ResultOverlay';
 import { SkyCanvas } from './components/SkyCanvas';
 import { Zukan } from './components/Zukan';
+import { Dashboard } from './components/Dashboard';
+import { FeedbackForm } from './components/FeedbackForm';
 import { CONSTELLATIONS } from './data/constellations';
 import { useStrokeInput } from './hooks/useStrokeInput';
 import { useViewportSize } from './hooks/useViewportSize';
 import { useDiscoveries } from './hooks/useDiscoveries';
+import { useClientId } from './hooks/useClientId';
+import { recordDiscovery } from './lib/api';
 import {
   DISCOVERY_SCORE_THRESHOLD,
   getOverlayPoints,
@@ -26,8 +30,11 @@ function App() {
   const [hint, setHint] = useState<string | null>(DEFAULT_HINT);
   const [isNewDiscovery, setIsNewDiscovery] = useState(false);
   const [showZukan, setShowZukan] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const discoveries = useDiscoveries();
+  const clientId = useClientId();
 
   const handleStrokeEnd = useCallback(
     (stroke: Point[]) => {
@@ -44,6 +51,8 @@ function App() {
       let newlyDiscovered = false;
       if (matchResult.score >= DISCOVERY_SCORE_THRESHOLD) {
         newlyDiscovered = discoveries.add(matchResult.constellation.id);
+        // 全体集計にも記録(ベストエフォート。失敗してもアプリは動く)
+        void recordDiscovery(clientId, matchResult.constellation.id);
       }
 
       setResult(matchResult);
@@ -51,7 +60,7 @@ function App() {
       setIsNewDiscovery(newlyDiscovered);
       setHint(null);
     },
-    [width, height, discoveries],
+    [width, height, discoveries, clientId],
   );
 
   const { currentStroke, handlers, reset } = useStrokeInput({ onStrokeEnd: handleStrokeEnd });
@@ -64,12 +73,44 @@ function App() {
     reset();
   }, [reset]);
 
-  const canvasInteractive = result === null && !showZukan;
+  const anyOverlayOpen = showZukan || showDashboard || showFeedback;
+  const canvasInteractive = result === null && !anyOverlayOpen;
   const showTraceHint = canvasInteractive && currentStroke.length === 0;
 
   return (
     <div className="app-root">
-      <Header hint={hint} />
+      <div className="top-bar">
+        <Header hint={hint} />
+        <nav className="top-nav" aria-label="メニュー">
+          <button
+            type="button"
+            className="nav-button nav-button--count"
+            onClick={() => setShowZukan(true)}
+            aria-label="ほしぞら ずかんを ひらく"
+          >
+            <span className="nav-button__icon" aria-hidden="true">📖</span>
+            <span className="nav-button__count">
+              {discoveries.count}/{CONSTELLATIONS.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setShowDashboard(true)}
+            aria-label="みんなの ほしぞらを みる"
+          >
+            <span className="nav-button__icon" aria-hidden="true">🌍</span>
+          </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => setShowFeedback(true)}
+            aria-label="いけんを おくる"
+          >
+            <span className="nav-button__icon" aria-hidden="true">💌</span>
+          </button>
+        </nav>
+      </div>
 
       {showTraceHint && (
         <div className="trace-hint" aria-hidden="true">
@@ -77,20 +118,6 @@ function App() {
           <span className="trace-hint__text">ゆびで じゆうに なぞってみてね</span>
         </div>
       )}
-
-      <button
-        type="button"
-        className="zukan-open-button"
-        onClick={() => setShowZukan(true)}
-        aria-label="ほしぞら ずかんを ひらく"
-      >
-        <span className="zukan-open-button__icon" aria-hidden="true">
-          📖
-        </span>
-        <span className="zukan-open-button__count">
-          {discoveries.count}/{CONSTELLATIONS.length}
-        </span>
-      </button>
 
       <SkyCanvas
         width={width}
@@ -116,6 +143,14 @@ function App() {
           onClose={() => setShowZukan(false)}
           onReset={discoveries.reset}
         />
+      )}
+
+      {showDashboard && (
+        <Dashboard discovered={discoveries.discovered} onClose={() => setShowDashboard(false)} />
+      )}
+
+      {showFeedback && (
+        <FeedbackForm clientId={clientId} onClose={() => setShowFeedback(false)} />
       )}
     </div>
   );
