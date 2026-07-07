@@ -33,15 +33,14 @@ export function Dashboard({ discovered, onClose }: DashboardProps) {
     };
   }, []);
 
-  // ランキングは自分が見つけた星座だけを表示する(未発見はネタバレしない)。
+  // ランキングは全星座を並べるが、未発見のものは名前を伏せてマスクする。
   const ranking = useMemo(() => {
     if (state.status !== 'ready') return [];
-    return CONSTELLATIONS.filter((c) => discovered.has(c.id))
-      .map((c) => ({
-        constellation: c,
-        count: state.stats.constellations[c.id] ?? 0,
-      }))
-      .sort((a, b) => b.count - a.count);
+    return CONSTELLATIONS.map((c) => ({
+      constellation: c,
+      count: state.stats.constellations[c.id] ?? 0,
+      mine: discovered.has(c.id),
+    })).sort((a, b) => b.count - a.count);
   }, [state, discovered]);
 
   return (
@@ -73,6 +72,7 @@ export function Dashboard({ discovered, onClose }: DashboardProps) {
 interface RankingRow {
   constellation: (typeof CONSTELLATIONS)[number];
   count: number;
+  mine: boolean;
 }
 
 function DashboardBody({
@@ -143,22 +143,31 @@ function DashboardBody({
         </p>
       </div>
 
-      {/* 星座別ランキング(自分が見つけた星座だけ) */}
-      <h3 className="dashboard__subtitle">きみが みつけた せいざ ランキング</h3>
-      {ranking.length === 0 ? (
+      {/* 星座別ランキング(全星座。未発見はマスク) */}
+      <h3 className="dashboard__subtitle">せいざ ランキング</h3>
+      {ranking[0]?.count === 0 ? (
         <p className="dashboard__message">
-          まだ みつけた せいざが ないよ。よぞらを なぞって みつけよう!
+          まだ だれも みつけていないよ。きみが さいしょかも!
         </p>
       ) : (
         <ul className="ranking">
           {ranking.map((row, i) => (
-            <li key={row.constellation.id} className="ranking__row">
+            <li
+              key={row.constellation.id}
+              className={`ranking__row${row.mine ? '' : ' ranking__row--masked'}`}
+            >
               <span className="ranking__rank">{i + 1}</span>
               <span className="ranking__emoji" aria-hidden="true">
-                {row.constellation.emoji}
+                {row.mine ? row.constellation.emoji : '❔'}
               </span>
               <div className="ranking__main">
-                <span className="ranking__name">{row.constellation.nameJa}</span>
+                {row.mine ? (
+                  <span className="ranking__name">{row.constellation.nameJa}</span>
+                ) : (
+                  <span className="ranking__name ranking__name--masked">
+                    ？？？ <span className="ranking__masked-note">まだ みつけてないよ</span>
+                  </span>
+                )}
                 <div className="ranking__bar">
                   <div
                     className="ranking__bar-fill"

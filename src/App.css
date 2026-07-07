@@ -686,6 +686,25 @@
   font-weight: 800;
 }
 
+.ranking__row--masked .ranking__emoji {
+  opacity: 0.6;
+}
+
+.ranking__name--masked {
+  color: rgba(207, 227, 255, 0.7);
+  font-weight: 700;
+}
+
+.ranking__masked-note {
+  font-size: 0.72rem;
+  color: rgba(207, 227, 255, 0.55);
+  font-weight: 400;
+}
+
+.ranking__row--masked .ranking__bar-fill {
+  background: rgba(180, 195, 255, 0.5);
+}
+
 .ranking__bar {
   height: 8px;
   border-radius: 999px;
