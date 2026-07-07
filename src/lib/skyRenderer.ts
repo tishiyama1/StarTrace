@@ -79,22 +79,28 @@ function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
 }
 
 /**
- * 静的な夜空をオフスクリーンキャンバスに描いて返す。
+ * 「天球ドーム」— 画面より大きい正方形の静的な空 — を描いて返す。
+ *
+ * 一辺 `size`(=画面対角+マージン)の正方形にしておき、画面中心を軸に
+ * ゆっくり回転させても四隅に隙間が出ないようにする(地球の自転の演出)。
  * 空のベースは低解像度で per-pixel 計算し、拡大転写でなめらかにぼかす
- * (星雲・天の川の「にじみ」がタダで手に入る)。微光星は実解像度で重ねる。
+ * (星雲・天の川の「にじみ」がタダで手に入る)。微光星と月は実解像度で重ねる。
+ *
+ * 画面に固定される要素(大気光・ビネット)は含めない —
+ * それらは `renderAtmosphere()` が別レイヤーとして描く。
  */
-export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number): HTMLCanvasElement {
+export function renderStaticSky(size: number, dpr: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(cssWidth * dpr));
-  canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+  canvas.width = Math.max(1, Math.round(size * dpr));
+  canvas.height = canvas.width;
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
   ctx.scale(dpr, dpr);
 
   // ---- 1. 低解像度 per-pixel パス --------------------------------------
   const scale = 0.3;
-  const lw = Math.max(2, Math.round(cssWidth * scale));
-  const lh = Math.max(2, Math.round(cssHeight * scale));
+  const lw = Math.max(2, Math.round(size * scale));
+  const lh = lw;
   const low = document.createElement('canvas');
   low.width = lw;
   low.height = lh;
@@ -103,14 +109,14 @@ export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number
   const img = lctx.createImageData(lw, lh);
   const data = img.data;
 
-  // 天の川の帯: 画面対角に沿わせる
-  const angle = Math.atan2(cssHeight, cssWidth);
+  // 天の川の帯: ドームの対角に沿わせる
+  const angle = Math.PI / 4;
   const dirX = Math.cos(angle);
   const dirY = Math.sin(angle);
   const perpX = -dirY;
   const perpY = dirX;
-  const diag = Math.hypot(cssWidth, cssHeight);
-  const bandHalf = Math.min(cssWidth, cssHeight) * 0.30;
+  const diag = size * Math.SQRT2;
+  const bandHalf = size * 0.16;
 
   // 空のベース色(上: 深い藍 → 下: わずかに明るい紫紺)
   const topColor: Rgb = { r: 6, g: 8, b: 22 };
@@ -119,25 +125,24 @@ export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number
 
   // かすかな星雲(実際の空の淡い散光星雲・反射星雲のイメージ)
   const nebulae = [
-    { x: 0.26, y: 0.30, radius: 0.34, color: { r: 160, g: 80, b: 110 }, strength: 0.16 },
-    { x: 0.72, y: 0.22, radius: 0.30, color: { r: 80, g: 115, b: 190 }, strength: 0.13 },
-    { x: 0.62, y: 0.74, radius: 0.36, color: { r: 130, g: 90, b: 170 }, strength: 0.12 },
+    { x: 0.26, y: 0.30, radius: 0.30, color: { r: 160, g: 80, b: 110 }, strength: 0.16 },
+    { x: 0.72, y: 0.22, radius: 0.26, color: { r: 80, g: 115, b: 190 }, strength: 0.13 },
+    { x: 0.62, y: 0.74, radius: 0.30, color: { r: 130, g: 90, b: 170 }, strength: 0.12 },
   ];
 
-  const cx = cssWidth / 2;
-  const cy = cssHeight / 2;
-  const maxDist = Math.hypot(cx, cy);
+  const cx = size / 2;
+  const cy = size / 2;
 
   let p = 0;
   for (let yy = 0; yy < lh; yy++) {
     const fy = yy / (lh - 1);
-    const py = fy * cssHeight;
+    const py = fy * size;
     // 縦グラデーション
     const base = fy < 0.6 ? lerpRgb(topColor, midColor, fy / 0.6) : lerpRgb(midColor, botColor, (fy - 0.6) / 0.4);
 
     for (let xx = 0; xx < lw; xx++) {
       const fx = xx / (lw - 1);
-      const px = fx * cssWidth;
+      const px = fx * size;
 
       let r = base.r;
       let g = base.g;
@@ -184,20 +189,6 @@ export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number
         }
       }
 
-      // ---- 大気光(地平線近くのかすかな緑) ----
-      const glowT = (fy - 0.86) / 0.05;
-      const airglow = Math.exp(-glowT * glowT) * 0.35;
-      r += 8 * airglow;
-      g += 22 * airglow;
-      b += 16 * airglow;
-
-      // ---- 周辺減光(ビネット。写真らしい落ち着き) ----
-      const vd = Math.hypot(px - cx, py - cy) / maxDist;
-      const vig = 1 - 0.30 * Math.pow(vd, 2.4);
-      r *= vig;
-      g *= vig;
-      b *= vig;
-
       data[p++] = Math.min(255, r);
       data[p++] = Math.min(255, g);
       data[p++] = Math.min(255, b);
@@ -209,11 +200,11 @@ export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number
   // 低解像度→実寸へ拡大(スムージングで自然なにじみになる)
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(low, 0, 0, cssWidth, cssHeight);
+  ctx.drawImage(low, 0, 0, size, size);
 
   // ---- 2. 微光星(実解像度)。天の川沿いに密集させる ---------------------
   const rand = mulberry32(SKY_SEED + 5);
-  const faintCount = Math.round(1600 + (cssWidth * cssHeight) / 900);
+  const faintCount = Math.round(1400 + (size * size) / 850);
   for (let i = 0; i < faintCount; i++) {
     let px: number;
     let py: number;
@@ -223,27 +214,102 @@ export function renderStaticSky(cssWidth: number, cssHeight: number, dpr: number
       const dGauss = (rand() + rand() + rand() - 1.5) * 0.5;
       px = cx + dirX * along * diag + perpX * dGauss * bandHalf;
       py = cy + dirY * along * diag + perpY * dGauss * bandHalf;
-      if (px < 0 || px > cssWidth || py < 0 || py > cssHeight) continue;
+      if (px < 0 || px > size || py < 0 || py > size) continue;
     } else {
-      px = rand() * cssWidth;
-      py = rand() * cssHeight;
+      px = rand() * size;
+      py = rand() * size;
     }
 
-    const size = 0.35 + rand() * rand() * 0.9; // 小さい星ほど多い
-    const alpha = 0.14 + rand() * 0.5 * (size / 1.2);
+    const starSize = 0.35 + rand() * rand() * 0.9; // 小さい星ほど多い
+    const alpha = 0.14 + rand() * 0.5 * (starSize / 1.2);
     // ほとんど白、まれに青白・暖色
     const tint = rand();
     const color =
       tint < 0.72 ? '228, 234, 246' : tint < 0.88 ? '196, 212, 248' : '250, 230, 205';
     ctx.fillStyle = `rgba(${color}, ${alpha})`;
-    if (size < 0.8) {
-      ctx.fillRect(px, py, size, size);
+    if (starSize < 0.8) {
+      ctx.fillRect(px, py, starSize, starSize);
     } else {
       ctx.beginPath();
-      ctx.arc(px, py, size * 0.55, 0, Math.PI * 2);
+      ctx.arc(px, py, starSize * 0.55, 0, Math.PI * 2);
       ctx.fill();
     }
   }
+
+  // ---- 3. 月(三日月)。天球に焼き込むので空と一緒に回る ------------------
+  drawMoon(ctx, size * 0.60, size * 0.27, size * 0.026);
+
+  return canvas;
+}
+
+/** 三日月を描く(ハロー+地球照+明るい弦)。 */
+function drawMoon(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number): void {
+  // 月あかりのハロー
+  const halo = ctx.createRadialGradient(x, y, radius * 0.6, x, y, radius * 4.6);
+  halo.addColorStop(0, 'rgba(235, 238, 250, 0.20)');
+  halo.addColorStop(0.4, 'rgba(225, 230, 250, 0.06)');
+  halo.addColorStop(1, 'rgba(225, 230, 250, 0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(x, y, radius * 4.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 地球照(影の側もごくうっすら見える)
+  ctx.fillStyle = 'rgba(205, 214, 236, 0.13)';
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 三日月本体: 別キャンバスで「明るい円 − ずらした円」を切り抜いてから転写する
+  // (暗い円を上から重ねる方式だと、影の側が黒い円盤として見えてしまう)
+  const pad = 4;
+  const spriteSize = Math.ceil(radius * 2) + pad * 2;
+  const sprite = document.createElement('canvas');
+  sprite.width = spriteSize;
+  sprite.height = spriteSize;
+  const sctx = sprite.getContext('2d');
+  if (!sctx) return;
+  const c = spriteSize / 2;
+  sctx.fillStyle = '#f2ecdc';
+  sctx.beginPath();
+  sctx.arc(c, c, radius, 0, Math.PI * 2);
+  sctx.fill();
+  sctx.globalCompositeOperation = 'destination-out';
+  sctx.beginPath();
+  sctx.arc(c - radius * 0.42, c - radius * 0.10, radius * 0.94, 0, Math.PI * 2);
+  sctx.fill();
+  ctx.drawImage(sprite, x - c, y - c);
+}
+
+/**
+ * 画面に固定される大気のレイヤー(周辺減光+地平線近くの大気光)。
+ * 回転する天球とは別に、一度だけ画面サイズで描いて毎フレーム重ねる。
+ */
+export function renderAtmosphere(cssWidth: number, cssHeight: number, dpr: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+  canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+  ctx.scale(dpr, dpr);
+
+  // 大気光(地平線近くのかすかな緑)
+  const glow = ctx.createLinearGradient(0, cssHeight * 0.78, 0, cssHeight * 0.97);
+  glow.addColorStop(0, 'rgba(40, 95, 70, 0)');
+  glow.addColorStop(0.62, 'rgba(45, 105, 78, 0.10)');
+  glow.addColorStop(1, 'rgba(40, 95, 70, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, cssHeight * 0.75, cssWidth, cssHeight * 0.25);
+
+  // 周辺減光(ビネット。写真らしい落ち着き)
+  const cx = cssWidth / 2;
+  const cy = cssHeight / 2;
+  const maxDist = Math.hypot(cx, cy);
+  const vig = ctx.createRadialGradient(cx, cy, maxDist * 0.45, cx, cy, maxDist);
+  vig.addColorStop(0, 'rgba(0, 0, 8, 0)');
+  vig.addColorStop(1, 'rgba(0, 0, 8, 0.30)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, cssWidth, cssHeight);
 
   return canvas;
 }
