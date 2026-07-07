@@ -23,7 +23,8 @@ function ZukanCard({ constellation, found }: { constellation: Constellation; fou
       <div className="zukan-card zukan-card--locked" aria-label="まだ みつけていない せいざ">
         <div className="zukan-card__mystery">?</div>
         <p className="zukan-card__name">？？？</p>
-        <p className="zukan-card__hint">なぞって みつけよう</p>
+        <p className="zukan-card__hint-label">💡 ヒント</p>
+        <p className="zukan-card__hint">{constellation.hint}</p>
       </div>
     );
   }

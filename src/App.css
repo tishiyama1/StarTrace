@@ -992,9 +992,17 @@
 }
 
 .zukan-card__mystery {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: 800;
   color: rgba(207, 227, 255, 0.5);
+  line-height: 1.1;
+}
+
+.zukan-card__hint-label {
+  margin: 6px 0 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffd97a;
 }
 
 .zukan-card__emoji {
@@ -1031,9 +1039,12 @@
 }
 
 .zukan-card__hint {
-  margin: 8px 0 0;
-  color: rgba(207, 227, 255, 0.6);
-  font-size: 0.78rem;
+  margin: 0;
+  color: rgba(215, 228, 255, 0.85);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .zukan__footer {

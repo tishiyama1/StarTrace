@@ -18,6 +18,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Ursa Major',
     category: 'real',
     emoji: '🐻',
+    hint: 'みずを くむ ひしゃくの かたち',
     description:
       '大きなクマの形をした星座だよ。7つの明るい星が、水をくむ「ひしゃく」のように並んでいるよ。',
     path: [
@@ -37,6 +38,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Ursa Minor',
     category: 'real',
     emoji: '🧸',
+    hint: 'ちいさな ひしゃくの かたち',
     description: '小さなクマの星座だよ。ひしゃくの柄の先っぽに、北をおしえてくれる北極星があるよ。',
     path: [
       { x: 35, y: 8 },
@@ -55,6 +57,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Cassiopeia',
     category: 'real',
     emoji: '👑',
+    hint: 'アルファベットの「W」の かたち',
     description: 'アルファベットの「W」のように見える、5つの星がジグザグに並ぶ星座だよ。',
     path: [
       { x: 8, y: 60 },
@@ -71,6 +74,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Orion',
     category: 'real',
     emoji: '🏹',
+    hint: 'すなどけいの ような かたち(ちょうちょむすび)',
     description: '3つ並んだ星が「ベルト」に見える、冬の夜空でいちばん目立つ星座だよ。',
     path: [
       { x: 15, y: 10 },
@@ -88,6 +92,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Scorpius',
     category: 'real',
     emoji: '🦂',
+    hint: 'さきが くるんと まがった「J」の かたち',
     description: 'さそりのしっぽのように、先っぽがくるんと丸まった形の星座だよ。',
     path: [
       { x: 8, y: 15 },
@@ -107,6 +112,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Cygnus',
     category: 'real',
     emoji: '🦢',
+    hint: 'おおきな じゅうじ(プラス)の かたち',
     description: '羽を広げて飛ぶ白鳥の形の星座だよ。星をつなぐと大きな十字架のように見えるよ。',
     path: [
       { x: 50, y: 10 },
@@ -125,6 +131,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Lyra',
     category: 'real',
     emoji: '🎵',
+    hint: 'ちいさな ひしがた(たこ)の かたち',
     description: '小さな竪琴(たてごと)の形をした星座だよ。夏の夜空で明るく光る星「ベガ」があるよ。',
     path: [
       { x: 50, y: 10 },
@@ -141,6 +148,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Aquila',
     category: 'real',
     emoji: '🦅',
+    hint: 'よこに ながい ひしがたの かたち',
     description: '大きな翼を広げたワシの形の星座だよ。彦星(ひこぼし)として知られる星「アルタイル」があるよ。',
     path: [
       { x: 15, y: 50 },
@@ -157,6 +165,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Gemini',
     category: 'real',
     emoji: '👯',
+    hint: '2ほんの あしが ひらいた ふたりの かたち',
     description: '仲よしの双子が頭をよせて並んで立っているような形の星座だよ。',
     path: [
       { x: 15, y: 90 },
@@ -174,6 +183,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Taurus',
     category: 'real',
     emoji: '🐂',
+    hint: 'よこに ひろい「V」の かたち(つの)',
     description: '大きな角を持つ牛の顔の形をした星座だよ。',
     path: [
       { x: 10, y: 10 },
@@ -190,6 +200,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Leo',
     category: 'real',
     emoji: '🦁',
+    hint: '「?」マークと さんかくの しっぽ',
     description: 'ライオンが寝そべっているような形の星座だよ。「?」マークに似た頭の部分が目印だよ。',
     path: [
       { x: 15, y: 20 },
@@ -208,6 +219,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Pegasus',
     category: 'real',
     emoji: '🐴',
+    hint: 'おおきな しかくの かたち',
     description: '空飛ぶ天馬(てんま)ペガススの星座だよ。4つの星でできた大きな四角形が目印だよ。',
     path: [
       { x: 20, y: 20 },
@@ -224,6 +236,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Cepheus',
     category: 'real',
     emoji: '🏠',
+    hint: 'とんがりやねの おうちの かたち',
     description: 'おうさまの星座だよ。とんがりやねの おうちのような五角形の形をしているよ。',
     path: [
       { x: 25, y: 82 },
@@ -241,6 +254,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Delphinus',
     category: 'real',
     emoji: '🐬',
+    hint: 'ひしがたに ちいさな しっぽ',
     description: '小さないるかが とびはねているような星座だよ。ダイヤのような形に しっぽがついているよ。',
     path: [
       { x: 44, y: 40 },
@@ -260,6 +274,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Gioconda',
     category: 'fun',
     emoji: '🖼️',
+    hint: 'くるくる うずまきの かたち',
     description:
       'なぞの ほほえみで ゆうめいな「モナリザ」の星座だよ。うずまきみたいに くるくる まわる ふしぎな形なんだって!',
     path: [
@@ -282,6 +297,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Cor',
     category: 'fun',
     emoji: '❤️',
+    hint: 'ハートの かたち',
     description: 'だいすきの きもちが かたちになった ハートの星座だよ。だれかに おしえてあげたくなるね!',
     path: [
       { x: 50, y: 28 },
@@ -304,6 +320,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Felis',
     category: 'fun',
     emoji: '🐱',
+    hint: 'とんがりみみが 2つ ある かおの かたち',
     description: 'ぴんと たった 2つの みみが かわいい ネコの星座だよ。「ニャー」と ないてるのかな?',
     path: [
       { x: 26, y: 52 },
@@ -324,6 +341,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Missile',
     category: 'fun',
     emoji: '🚀',
+    hint: 'さきが とがった ロケットの かたち',
     description: 'そらを めざして とびたつ ロケットの星座だよ。3、2、1、はっしゃ! うちゅうへ しゅっぱつ!',
     path: [
       { x: 50, y: 8 },
@@ -345,6 +363,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Ramen',
     category: 'fun',
     emoji: '🍜',
+    hint: 'ゆげと どんぶりの かたち',
     description: 'ゆげが ほかほか、おいしい ラーメンの星座だよ。よぞらに うかぶ どんぶりが みえるかな?',
     path: [
       { x: 38, y: 10 },
@@ -364,6 +383,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Fulmen',
     category: 'fun',
     emoji: '⚡',
+    hint: 'ギザギザの いなずま(Z)の かたち',
     description: 'ピカッと ひかる カミナリの星座だよ。ギザギザの かたちが かっこいいね!',
     path: [
       { x: 30, y: 8 },
@@ -380,6 +400,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Phantasma',
     category: 'fun',
     emoji: '👻',
+    hint: 'したが ギザギザの おばけの かたち',
     description: 'ふわふわ ういている おばけの星座だよ。したの ぎざぎざが ゆれてる みたいで かわいいね!',
     path: [
       { x: 28, y: 24 },
@@ -401,6 +422,7 @@ export const CONSTELLATIONS: Constellation[] = [
     latinName: 'Fungus',
     category: 'fun',
     emoji: '🍄',
+    hint: 'まるい かさと ぼうの キノコの かたち',
     description: 'まるい かさが かわいい キノコの星座だよ。もりの なかに はえてそうだね!',
     path: [
       { x: 18, y: 46 },

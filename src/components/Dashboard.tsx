@@ -33,13 +33,15 @@ export function Dashboard({ discovered, onClose }: DashboardProps) {
     };
   }, []);
 
+  // ランキングは自分が見つけた星座だけを表示する(未発見はネタバレしない)。
   const ranking = useMemo(() => {
     if (state.status !== 'ready') return [];
-    return CONSTELLATIONS.map((c) => ({
-      constellation: c,
-      count: state.stats.constellations[c.id] ?? 0,
-      mine: discovered.has(c.id),
-    })).sort((a, b) => b.count - a.count);
+    return CONSTELLATIONS.filter((c) => discovered.has(c.id))
+      .map((c) => ({
+        constellation: c,
+        count: state.stats.constellations[c.id] ?? 0,
+      }))
+      .sort((a, b) => b.count - a.count);
   }, [state, discovered]);
 
   return (
@@ -71,7 +73,6 @@ export function Dashboard({ discovered, onClose }: DashboardProps) {
 interface RankingRow {
   constellation: (typeof CONSTELLATIONS)[number];
   count: number;
-  mine: boolean;
 }
 
 function DashboardBody({
@@ -83,7 +84,10 @@ function DashboardBody({
   ranking: RankingRow[];
   discovered: Set<string>;
 }) {
-  const kindsFoundGlobally = ranking.filter((r) => r.count > 0).length;
+  // 世界で見つかった種類数は全体データから数える(自分の発見とは独立)。
+  const kindsFoundGlobally = CONSTELLATIONS.filter(
+    (c) => (stats.constellations[c.id] ?? 0) > 0,
+  ).length;
   const allFound = kindsFoundGlobally >= TOTAL_KINDS;
   const maxCount = ranking.length > 0 ? Math.max(1, ranking[0].count) : 1;
 
@@ -139,11 +143,11 @@ function DashboardBody({
         </p>
       </div>
 
-      {/* 星座別ランキング */}
-      <h3 className="dashboard__subtitle">せいざ ランキング</h3>
-      {ranking[0]?.count === 0 ? (
+      {/* 星座別ランキング(自分が見つけた星座だけ) */}
+      <h3 className="dashboard__subtitle">きみが みつけた せいざ ランキング</h3>
+      {ranking.length === 0 ? (
         <p className="dashboard__message">
-          まだ だれも みつけていないよ。きみが さいしょかも!
+          まだ みつけた せいざが ないよ。よぞらを なぞって みつけよう!
         </p>
       ) : (
         <ul className="ranking">
@@ -154,10 +158,7 @@ function DashboardBody({
                 {row.constellation.emoji}
               </span>
               <div className="ranking__main">
-                <span className="ranking__name">
-                  {row.constellation.nameJa}
-                  {row.mine && <span className="ranking__mine" title="きみも みつけたよ"> ✓</span>}
-                </span>
+                <span className="ranking__name">{row.constellation.nameJa}</span>
                 <div className="ranking__bar">
                   <div
                     className="ranking__bar-fill"

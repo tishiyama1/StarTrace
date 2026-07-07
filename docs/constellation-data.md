@@ -20,6 +20,7 @@ export interface Constellation {
   latinName: string;            // 学名 (例: "Ursa Major")
   category: ConstellationCategory; // 'real'=実在 / 'fun'=おはなしの星座(非実在)
   emoji: string;                // 図鑑カード等に添える絵文字
+  hint: string;                 // 未発見の図鑑カードに出す「なぞる形」のヒント
   description: string;          // 結果画面・図鑑に表示する子供向けの紹介文
   path: Point[];                // なぞる順に星を直線で結んだ座標列(1ストローク分)
 }
