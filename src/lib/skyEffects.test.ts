@@ -8,7 +8,14 @@ import {
   updateShootingStars,
   type ShootingStar,
 } from './skyEffects';
-import { fbm2, generateBrightStars, generateHorizon, mulberry32, valueNoise2 } from './skyRenderer';
+import {
+  fbm2,
+  generateBrightStars,
+  generateHorizon,
+  moonIlluminationFraction,
+  mulberry32,
+  valueNoise2,
+} from './skyRenderer';
 
 describe('skyRenderer noise', () => {
   it('mulberry32 is deterministic for the same seed', () => {
@@ -176,13 +183,16 @@ describe('satellite', () => {
 });
 
 describe('aurora', () => {
-  it('has 2-3 layers with colors', () => {
+  it('spawns layered curtains with sane parameters', () => {
     const a = spawnAurora();
-    expect(a.layers.length).toBeGreaterThanOrEqual(2);
-    for (const layer of a.layers) {
-      expect(layer.rgb.split(',')).toHaveLength(3);
-      expect(layer.peakAlpha).toBeGreaterThan(0);
+    expect(a.curtains.length).toBeGreaterThanOrEqual(2);
+    for (const curtain of a.curtains) {
+      expect(curtain.strength).toBeGreaterThan(0);
+      expect(curtain.rayLen).toBeGreaterThan(0);
+      expect(curtain.baseY).toBeGreaterThan(0);
+      expect(curtain.baseY).toBeLessThan(0.6);
     }
+    expect(typeof a.hasRedTop).toBe('boolean');
   });
 
   it('fades in and out over its lifetime', () => {
@@ -193,5 +203,15 @@ describe('aurora', () => {
     expect(auroraEnvelope(a)).toBeCloseTo(1, 5);
     a.age = a.life;
     expect(auroraEnvelope(a)).toBe(0);
+  });
+});
+
+describe('moonIlluminationFraction', () => {
+  it('is 0 at new moon, 0.5 at quarters, 1 at full moon', () => {
+    expect(moonIlluminationFraction(0)).toBeCloseTo(0, 5);
+    expect(moonIlluminationFraction(0.25)).toBeCloseTo(0.5, 5);
+    expect(moonIlluminationFraction(0.5)).toBeCloseTo(1, 5);
+    expect(moonIlluminationFraction(0.75)).toBeCloseTo(0.5, 5);
+    expect(moonIlluminationFraction(1)).toBeCloseTo(0, 5);
   });
 });
