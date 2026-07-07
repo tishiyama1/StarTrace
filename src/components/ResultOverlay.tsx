@@ -15,10 +15,9 @@ const CATEGORY_BADGE: Record<MatchResult['constellation']['category'], string> =
 };
 
 function praiseForScore(score: number): string {
-  if (score >= 85) return '⭐ かんぺき!';
-  if (score >= 70) return '🌟 すごい!';
-  if (score >= 55) return '✨ いいね!';
-  return '🌙 おしい! もういちど やってみよう';
+  if (score >= 88) return '⭐ かんぺき!';
+  if (score >= 76) return '🌟 すごい!';
+  return '✨ いいね!';
 }
 
 export function ResultOverlay({ result, isNewDiscovery, onRetry, onOpenZukan }: ResultOverlayProps) {
