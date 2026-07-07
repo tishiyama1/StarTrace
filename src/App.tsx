@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { Header } from './components/Header';
 import { ResultOverlay } from './components/ResultOverlay';
@@ -24,6 +24,8 @@ import type { MatchResult, Point } from './types';
 
 const TOO_SHORT_HINT = 'もっと おおきく、ゆびで なぞってみてね!';
 const DEFAULT_HINT = null;
+/** なぞりガイド(👆)を出しておく時間。最初だけ助けて、あとは夜空を邪魔しない */
+const TRACE_HINT_DURATION_MS = 10000;
 
 function App() {
   const { width, height } = useViewportSize();
@@ -36,8 +38,16 @@ function App() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
+  const [hintExpired, setHintExpired] = useState(false);
+
   const discoveries = useDiscoveries();
   const clientId = useClientId();
+
+  // なぞりガイドは起動から一定時間で消す(以後は再表示しない)
+  useEffect(() => {
+    const timer = setTimeout(() => setHintExpired(true), TRACE_HINT_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleStrokeEnd = useCallback(
     (stroke: Point[]) => {
@@ -91,13 +101,15 @@ function App() {
   }, [reset]);
 
   const anyOverlayOpen = showZukan || showDashboard || showFeedback;
-  const canvasInteractive = result === null && !notFound && !anyOverlayOpen;
-  const showTraceHint = canvasInteractive && currentStroke.length === 0;
+  const resultShowing = result !== null || notFound;
+  const canvasInteractive = !resultShowing && !anyOverlayOpen;
+  const showTraceHint = canvasInteractive && currentStroke.length === 0 && !hintExpired;
 
   return (
     <div className="app-root">
       <div className="top-bar">
-        <Header hint={hint} />
+        {/* 結果パネル表示中はヘッダー文言を隠して被りを防ぐ(ナビは残す) */}
+        {resultShowing ? <div className="app-header" aria-hidden="true" /> : <Header hint={hint} />}
         <nav className="top-nav" aria-label="メニュー">
           <button
             type="button"

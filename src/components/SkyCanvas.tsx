@@ -19,6 +19,7 @@ import {
   drawHorizon,
   generateBrightStars,
   generateHorizon,
+  renderAtmosphere,
   renderStaticSky,
 } from '../lib/skyRenderer';
 
@@ -49,7 +50,8 @@ export function SkyCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 静的な空(プリレンダ)・輝星・山影は初回とリサイズ時だけ作り直す
-  const brightStarsRef = useRef(generateBrightStars(130));
+  // 輝星は画面より大きい「天球ドーム」上に置くため、少し多めに生成する
+  const brightStarsRef = useRef(generateBrightStars(300));
   const starSpritesRef = useRef<ReturnType<typeof createStarSprites> | null>(null);
   const horizonRef = useRef(generateHorizon());
 
@@ -90,12 +92,18 @@ export function SkyCanvas({
 
     const minDim = Math.min(width, height);
 
-    // 重い静的レイヤーはここで一度だけ描く(リサイズ時は作り直し)
-    const staticSky = renderStaticSky(width, height, dpr);
+    // 重い静的レイヤーはここで一度だけ描く(リサイズ時は作り直し)。
+    // 天球ドームは画面対角より大きい正方形にして、回転しても隙間が出ないようにする。
+    const domeSize = Math.ceil(Math.hypot(width, height)) + 16;
+    const skyDome = renderStaticSky(domeSize, dpr);
+    const atmosphere = renderAtmosphere(width, height, dpr);
     if (!starSpritesRef.current) {
       starSpritesRef.current = createStarSprites();
     }
     const sprites = starSpritesRef.current;
+
+    // 地球の自転の演出: 天球全体が画面中心のまわりをゆっくり回る(1周約40分)
+    const ROTATION_PERIOD_MS = 40 * 60 * 1000;
 
     // 開発・検証用の隠しフック: ?sky=aurora / shower / fireball / satellite で
     // そのイベントをすぐに発生させる(通常利用では無害)。
@@ -123,10 +131,18 @@ export function SkyCanvas({
       const dt = lastTimeRef.current === 0 ? 16 : Math.min(64, time - lastTimeRef.current);
       lastTimeRef.current = time;
 
-      // 静的な空(グラデーション+天の川+星雲+微光星+ビネット)を転写
-      ctx.drawImage(staticSky, 0, 0, width, height);
+      // 天球ドーム(空+天の川+微光星+月)を、画面中心を軸にゆっくり回して転写。
+      // またたく輝星も同じ回転空間に置くので、空と一緒に回る。
+      const theta = ((time % ROTATION_PERIOD_MS) / ROTATION_PERIOD_MS) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(theta);
+      ctx.translate(-domeSize / 2, -domeSize / 2);
+      ctx.drawImage(skyDome, 0, 0, domeSize, domeSize);
+      drawBrightStars(ctx, brightStarsRef.current, sprites, domeSize, domeSize, time);
+      ctx.restore();
 
-      // オーロラは星より奥(星はオーロラ越しに透けて見える)
+      // オーロラ(画面固定。星や月はオーロラの奥で回りつづける)
       if (auroraRef.current) {
         auroraRef.current.age += dt;
         if (auroraRef.current.age >= auroraRef.current.life) {
@@ -135,9 +151,6 @@ export function SkyCanvas({
           drawAurora(ctx, auroraRef.current, width, height, time);
         }
       }
-
-      // またたく輝星(ブルーム付きスプライト)
-      drawBrightStars(ctx, brightStarsRef.current, sprites, width, height, time);
 
       // ── 夜空イベントのスケジューラ ──
       // 数秒ごとに「ふつうの流れ星 / 火球 / 流星群 / 人工衛星 / オーロラ」の
@@ -188,6 +201,9 @@ export function SkyCanvas({
 
       satellitesRef.current = updateSatellites(satellitesRef.current, dt, minDim);
       drawSatellites(ctx, satellitesRef.current, width, height);
+
+      // 大気レイヤー(ビネット+大気光)は画面に固定。回る空の手前に重なる
+      ctx.drawImage(atmosphere, 0, 0, width, height);
 
       // 地平線の山影(前景。流れ星は山のうしろに沈む)
       drawHorizon(ctx, horizonRef.current, width, height);
