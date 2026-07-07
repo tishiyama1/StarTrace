@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   auroraEnvelope,
-  generateBackgroundStars,
-  generateMilkyWayStars,
-  generateNebulae,
   spawnAurora,
   spawnSatellite,
   spawnShootingStar,
@@ -11,35 +8,54 @@ import {
   updateShootingStars,
   type ShootingStar,
 } from './skyEffects';
+import { fbm2, generateBrightStars, generateHorizon, mulberry32, valueNoise2 } from './skyRenderer';
 
-describe('generateBackgroundStars', () => {
-  it('creates the requested number of stars with normalized coordinates', () => {
-    const stars = generateBackgroundStars(50);
-    expect(stars).toHaveLength(50);
+describe('skyRenderer noise', () => {
+  it('mulberry32 is deterministic for the same seed', () => {
+    const a = mulberry32(42);
+    const b = mulberry32(42);
+    for (let i = 0; i < 5; i++) {
+      expect(a()).toBe(b());
+    }
+  });
+
+  it('valueNoise2 / fbm2 return values in a sane range and are deterministic', () => {
+    for (let i = 0; i < 50; i++) {
+      const x = i * 0.7;
+      const y = i * 1.3;
+      const n = valueNoise2(x, y, 7);
+      expect(n).toBeGreaterThanOrEqual(0);
+      expect(n).toBeLessThanOrEqual(1);
+      expect(fbm2(x, y, 4, 7)).toBe(fbm2(x, y, 4, 7));
+    }
+  });
+});
+
+describe('generateBrightStars', () => {
+  it('creates normalized stars with valid tint indices', () => {
+    const stars = generateBrightStars(60);
+    expect(stars).toHaveLength(60);
     for (const s of stars) {
       expect(s.x).toBeGreaterThanOrEqual(0);
       expect(s.x).toBeLessThanOrEqual(1);
       expect(s.y).toBeGreaterThanOrEqual(0);
       expect(s.y).toBeLessThanOrEqual(1);
-      expect(s.radius).toBeGreaterThan(0);
+      expect(s.size).toBeGreaterThan(0);
+      expect(s.tintIndex).toBeGreaterThanOrEqual(0);
+      expect(s.tintIndex).toBeLessThan(5);
     }
   });
 });
 
-describe('generateMilkyWayStars', () => {
-  it('creates the requested number of stars', () => {
-    expect(generateMilkyWayStars(80, Math.PI * 0.14)).toHaveLength(80);
-  });
-});
-
-describe('generateNebulae', () => {
-  it('returns non-empty nebulae with valid rgb strings', () => {
-    const nebulae = generateNebulae();
-    expect(nebulae.length).toBeGreaterThan(0);
-    for (const n of nebulae) {
-      expect(n.rgb.split(',')).toHaveLength(3);
-      expect(n.peakAlpha).toBeGreaterThan(0);
+describe('generateHorizon', () => {
+  it('creates a ridge with reasonable heights and some trees', () => {
+    const h = generateHorizon(48);
+    expect(h.ridge).toHaveLength(49);
+    for (const r of h.ridge) {
+      expect(r).toBeGreaterThan(0.02);
+      expect(r).toBeLessThan(0.15);
     }
+    expect(h.trees.length).toBeGreaterThan(3);
   });
 });
 

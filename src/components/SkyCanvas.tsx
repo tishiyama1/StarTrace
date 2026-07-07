@@ -2,15 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { Point } from '../types';
 import {
   drawAurora,
-  drawBackgroundStars,
-  drawMilkyWayBand,
-  drawMilkyWayStars,
-  drawNebulae,
   drawSatellites,
   drawShootingStars,
-  generateBackgroundStars,
-  generateMilkyWayStars,
-  generateNebulae,
   spawnAurora,
   spawnSatellite,
   spawnShootingStar,
@@ -20,6 +13,14 @@ import {
   type Satellite,
   type ShootingStar,
 } from '../lib/skyEffects';
+import {
+  createStarSprites,
+  drawBrightStars,
+  drawHorizon,
+  generateBrightStars,
+  generateHorizon,
+  renderStaticSky,
+} from '../lib/skyRenderer';
 
 interface PointerHandlers {
   onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
@@ -37,9 +38,6 @@ interface SkyCanvasProps {
   pointerHandlers: PointerHandlers;
 }
 
-/** 天の川の帯の傾き(ラジアン) */
-const MILKY_WAY_ANGLE = Math.PI * 0.14;
-
 export function SkyCanvas({
   width,
   height,
@@ -50,10 +48,10 @@ export function SkyCanvas({
 }: SkyCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 静的に生成する天体は初回だけ作る(座標は 0〜1 正規化なのでリサイズ非依存)
-  const starsRef = useRef(generateBackgroundStars(170));
-  const milkyWayStarsRef = useRef(generateMilkyWayStars(230, MILKY_WAY_ANGLE));
-  const nebulaeRef = useRef(generateNebulae());
+  // 静的な空(プリレンダ)・輝星・山影は初回とリサイズ時だけ作り直す
+  const brightStarsRef = useRef(generateBrightStars(130));
+  const starSpritesRef = useRef<ReturnType<typeof createStarSprites> | null>(null);
+  const horizonRef = useRef(generateHorizon());
 
   // 動的な天体(流れ星・人工衛星・オーロラ)とイベント予約
   const shootingStarsRef = useRef<ShootingStar[]>([]);
@@ -92,6 +90,13 @@ export function SkyCanvas({
 
     const minDim = Math.min(width, height);
 
+    // 重い静的レイヤーはここで一度だけ描く(リサイズ時は作り直し)
+    const staticSky = renderStaticSky(width, height, dpr);
+    if (!starSpritesRef.current) {
+      starSpritesRef.current = createStarSprites();
+    }
+    const sprites = starSpritesRef.current;
+
     // 開発・検証用の隠しフック: ?sky=aurora / shower / fireball / satellite で
     // そのイベントをすぐに発生させる(通常利用では無害)。
     const skyParam = new URLSearchParams(window.location.search).get('sky');
@@ -118,16 +123,10 @@ export function SkyCanvas({
       const dt = lastTimeRef.current === 0 ? 16 : Math.min(64, time - lastTimeRef.current);
       lastTimeRef.current = time;
 
-      // 背景のグラデーション
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, '#04040f');
-      gradient.addColorStop(0.55, '#0b0f2b');
-      gradient.addColorStop(1, '#161436');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+      // 静的な空(グラデーション+天の川+星雲+微光星+ビネット)を転写
+      ctx.drawImage(staticSky, 0, 0, width, height);
 
-      // 星雲 → オーロラ → 天の川 → 星の順で奥から手前へ描く
-      drawNebulae(ctx, nebulaeRef.current, width, height, time);
+      // オーロラは星より奥(星はオーロラ越しに透けて見える)
       if (auroraRef.current) {
         auroraRef.current.age += dt;
         if (auroraRef.current.age >= auroraRef.current.life) {
@@ -136,9 +135,9 @@ export function SkyCanvas({
           drawAurora(ctx, auroraRef.current, width, height, time);
         }
       }
-      drawMilkyWayBand(ctx, width, height, MILKY_WAY_ANGLE);
-      drawMilkyWayStars(ctx, milkyWayStarsRef.current, width, height);
-      drawBackgroundStars(ctx, starsRef.current, width, height, time);
+
+      // またたく輝星(ブルーム付きスプライト)
+      drawBrightStars(ctx, brightStarsRef.current, sprites, width, height, time);
 
       // ── 夜空イベントのスケジューラ ──
       // 数秒ごとに「ふつうの流れ星 / 火球 / 流星群 / 人工衛星 / オーロラ」の
@@ -189,6 +188,9 @@ export function SkyCanvas({
 
       satellitesRef.current = updateSatellites(satellitesRef.current, dt, minDim);
       drawSatellites(ctx, satellitesRef.current, width, height);
+
+      // 地平線の山影(前景。流れ星は山のうしろに沈む)
+      drawHorizon(ctx, horizonRef.current, width, height);
 
       // お手本ライン(結果表示時)
       const overlay = overlayRef.current;
