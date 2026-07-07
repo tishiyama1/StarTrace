@@ -109,5 +109,7 @@ score = clamp( 100 * (1 − distance / DISTANCE_SCALE), 0, 100 )
    こと(テンプレート同士の識別性チェック)。新しい星座を追加したときも、このテストが
    通ることで既存の形と衝突しないことを保証する。
 
-なお、マッチ度が `DISCOVERY_SCORE_THRESHOLD`(既定55%)以上のときに図鑑へ登録する
-(詳細は `docs/zukan-feature.md`)。
+なお、マッチ度が `NOT_FOUND_SCORE_THRESHOLD`(既定65%)未満のときは、どの星座も
+表示せず「みつからないね」の演出を返す(適当ななぐり書き対策。閾値はなぐり書きと
+正しいなぞりのスコア分布の計測から決定)。それ以上のときは結果を表示し、同時に
+図鑑へ登録する(`DISCOVERY_SCORE_THRESHOLD` = 同値。詳細は `docs/zukan-feature.md`)。

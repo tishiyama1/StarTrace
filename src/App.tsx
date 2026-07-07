@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import './App.css';
 import { Header } from './components/Header';
 import { ResultOverlay } from './components/ResultOverlay';
+import { NotFoundOverlay } from './components/NotFoundOverlay';
 import { SkyCanvas } from './components/SkyCanvas';
 import { Zukan } from './components/Zukan';
 import { Dashboard } from './components/Dashboard';
@@ -14,6 +15,7 @@ import { useClientId } from './hooks/useClientId';
 import { recordDiscovery } from './lib/api';
 import {
   DISCOVERY_SCORE_THRESHOLD,
+  NOT_FOUND_SCORE_THRESHOLD,
   getOverlayPoints,
   isStrokeTooShort,
   matchConstellation,
@@ -29,6 +31,7 @@ function App() {
   const [overlayPoints, setOverlayPoints] = useState<Point[] | null>(null);
   const [hint, setHint] = useState<string | null>(DEFAULT_HINT);
   const [isNewDiscovery, setIsNewDiscovery] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [showZukan, setShowZukan] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -45,6 +48,18 @@ function App() {
       }
 
       const matchResult = matchConstellation(stroke, CONSTELLATIONS);
+
+      // どの星座にも十分似ていない場合は「みつからないね」演出にする
+      // (適当ななぐり書きでも必ず何かがヒットしてしまうのを防ぐ)。
+      if (matchResult.score < NOT_FOUND_SCORE_THRESHOLD) {
+        setNotFound(true);
+        setResult(null);
+        setOverlayPoints(null);
+        setIsNewDiscovery(false);
+        setHint(null);
+        return;
+      }
+
       const overlay = getOverlayPoints(stroke, matchResult.constellation);
 
       // 一定以上のマッチ度なら図鑑に登録。今回はじめての発見なら演出を出す。
@@ -58,6 +73,7 @@ function App() {
       setResult(matchResult);
       setOverlayPoints(overlay);
       setIsNewDiscovery(newlyDiscovered);
+      setNotFound(false);
       setHint(null);
     },
     [width, height, discoveries, clientId],
@@ -69,12 +85,13 @@ function App() {
     setResult(null);
     setOverlayPoints(null);
     setIsNewDiscovery(false);
+    setNotFound(false);
     setHint(DEFAULT_HINT);
     reset();
   }, [reset]);
 
   const anyOverlayOpen = showZukan || showDashboard || showFeedback;
-  const canvasInteractive = result === null && !anyOverlayOpen;
+  const canvasInteractive = result === null && !notFound && !anyOverlayOpen;
   const showTraceHint = canvasInteractive && currentStroke.length === 0;
 
   return (
@@ -135,6 +152,10 @@ function App() {
           onRetry={handleRetry}
           onOpenZukan={() => setShowZukan(true)}
         />
+      )}
+
+      {notFound && (
+        <NotFoundOverlay onRetry={handleRetry} onOpenZukan={() => setShowZukan(true)} />
       )}
 
       {showZukan && (

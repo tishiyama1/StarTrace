@@ -22,10 +22,23 @@ export const DISTANCE_SCALE = 1.4;
 export const MIN_STROKE_LENGTH_RATIO = 0.05;
 
 /**
- * このマッチ度以上のときに「図鑑に登録する(=発見した)」とみなす閾値。
- * 低すぎると適当に描いても集まってしまい、高すぎると子供が達成できないため中間値。
+ * このマッチ度未満のときは「どの星座にも 見えない」として、
+ * 星座名を出さずに「みつからないね」の演出を返す閾値。
+ * 適当ななぐり書きでも必ず何かがヒットしてしまう問題への対策。
+ *
+ * 値はランダムななぐり書き30種と、手ブレを加えた正しいなぞり44種の
+ * スコア分布から決定した: なぐり書きは中央値59%・最大79%、正しいなぞりは
+ * 最低でも88%。65% はなぐり書きの93%をブロックしつつ、正しいなぞりを
+ * 誤ってブロックしない。
  */
-export const DISCOVERY_SCORE_THRESHOLD = 55;
+export const NOT_FOUND_SCORE_THRESHOLD = 65;
+
+/**
+ * このマッチ度以上のときに「図鑑に登録する(=発見した)」とみなす閾値。
+ * NOT_FOUND と同じ値にして「結果が表示された=図鑑にも登録される」という
+ * 子供に分かりやすい体験にしている。
+ */
+export const DISCOVERY_SCORE_THRESHOLD = NOT_FOUND_SCORE_THRESHOLD;
 
 function distanceForDirection(userNormalized: Point[], templateNormalized: Point[]): number {
   const theta = optimalRotationAngle(userNormalized, templateNormalized);

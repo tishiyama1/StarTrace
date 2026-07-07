@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  auroraEnvelope,
   generateBackgroundStars,
   generateMilkyWayStars,
   generateNebulae,
+  spawnAurora,
+  spawnSatellite,
   spawnShootingStar,
+  updateSatellites,
   updateShootingStars,
   type ShootingStar,
 } from './skyEffects';
@@ -77,6 +81,9 @@ describe('updateShootingStars', () => {
       tailLength: 0.2,
       age: 0,
       life: 1000,
+      rgb: '220, 240, 255',
+      width: 2,
+      fireball: false,
     };
     const [moved] = updateShootingStars([star], 100, 400);
     expect(moved.x).toBeGreaterThan(0.2);
@@ -94,6 +101,9 @@ describe('updateShootingStars', () => {
       tailLength: 0.2,
       age: 990,
       life: 1000,
+      rgb: '220, 240, 255',
+      width: 2,
+      fireball: false,
     };
     const result = updateShootingStars([star], 50, 400);
     expect(result).toHaveLength(0);
@@ -109,8 +119,63 @@ describe('updateShootingStars', () => {
       tailLength: 0.2,
       age: 100,
       life: 5000,
+      rgb: '220, 240, 255',
+      width: 2,
+      fireball: false,
     };
     const result = updateShootingStars([star], 50, 400);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('fireball', () => {
+  it('is bigger, longer-lived and marked as fireball', () => {
+    const normal = spawnShootingStar();
+    const fireball = spawnShootingStar('fireball');
+    expect(fireball.fireball).toBe(true);
+    expect(normal.fireball).toBe(false);
+    expect(fireball.width).toBeGreaterThan(3);
+    expect(fireball.life).toBeGreaterThan(1500);
+  });
+});
+
+describe('satellite', () => {
+  it('crosses the sky slowly and horizontally-ish', () => {
+    for (let i = 0; i < 20; i++) {
+      const s = spawnSatellite();
+      expect(Math.abs(s.dirX)).toBeGreaterThan(0.8); // ほぼ水平
+      expect(s.speed).toBeLessThan(0.0002); // 流れ星よりずっと遅い
+    }
+  });
+
+  it('advances position and expires off-screen', () => {
+    const s = spawnSatellite();
+    const startX = s.x;
+    const [moved] = updateSatellites([s], 1000, 400);
+    expect(moved.x).not.toBe(startX);
+
+    const gone = { ...spawnSatellite(), x: 1.5 };
+    expect(updateSatellites([gone], 16, 400)).toHaveLength(0);
+  });
+});
+
+describe('aurora', () => {
+  it('has 2-3 layers with colors', () => {
+    const a = spawnAurora();
+    expect(a.layers.length).toBeGreaterThanOrEqual(2);
+    for (const layer of a.layers) {
+      expect(layer.rgb.split(',')).toHaveLength(3);
+      expect(layer.peakAlpha).toBeGreaterThan(0);
+    }
+  });
+
+  it('fades in and out over its lifetime', () => {
+    const a = spawnAurora();
+    a.age = 0;
+    expect(auroraEnvelope(a)).toBe(0);
+    a.age = a.life / 2;
+    expect(auroraEnvelope(a)).toBeCloseTo(1, 5);
+    a.age = a.life;
+    expect(auroraEnvelope(a)).toBe(0);
   });
 });

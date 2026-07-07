@@ -1,16 +1,23 @@
 import { useEffect, useRef } from 'react';
 import type { Point } from '../types';
 import {
+  drawAurora,
   drawBackgroundStars,
   drawMilkyWayBand,
   drawMilkyWayStars,
   drawNebulae,
+  drawSatellites,
   drawShootingStars,
   generateBackgroundStars,
   generateMilkyWayStars,
   generateNebulae,
+  spawnAurora,
+  spawnSatellite,
   spawnShootingStar,
+  updateSatellites,
   updateShootingStars,
+  type Aurora,
+  type Satellite,
   type ShootingStar,
 } from '../lib/skyEffects';
 
@@ -48,9 +55,13 @@ export function SkyCanvas({
   const milkyWayStarsRef = useRef(generateMilkyWayStars(230, MILKY_WAY_ANGLE));
   const nebulaeRef = useRef(generateNebulae());
 
-  // 流れ星は動的に管理
+  // 動的な天体(流れ星・人工衛星・オーロラ)とイベント予約
   const shootingStarsRef = useRef<ShootingStar[]>([]);
-  const nextSpawnRef = useRef<number>(1800);
+  const satellitesRef = useRef<Satellite[]>([]);
+  const auroraRef = useRef<Aurora | null>(null);
+  const nextEventInRef = useRef<number>(1800);
+  // 流星群イベント中の残り数と次の1本までの時間
+  const showerRef = useRef<{ remaining: number; nextIn: number }>({ remaining: 0, nextIn: 0 });
   const lastTimeRef = useRef<number>(0);
 
   const strokeRef = useRef<Point[]>(currentStroke);
@@ -81,6 +92,19 @@ export function SkyCanvas({
 
     const minDim = Math.min(width, height);
 
+    // 開発・検証用の隠しフック: ?sky=aurora / shower / fireball / satellite で
+    // そのイベントをすぐに発生させる(通常利用では無害)。
+    const skyParam = new URLSearchParams(window.location.search).get('sky');
+    if (skyParam === 'aurora' && !auroraRef.current) {
+      auroraRef.current = spawnAurora();
+    } else if (skyParam === 'shower') {
+      showerRef.current = { remaining: 6, nextIn: 0 };
+    } else if (skyParam === 'fireball') {
+      shootingStarsRef.current.push(spawnShootingStar('fireball'));
+    } else if (skyParam === 'satellite') {
+      satellitesRef.current.push(spawnSatellite());
+    }
+
     function drawStrokePath(ctx: CanvasRenderingContext2D, points: Point[]) {
       ctx.beginPath();
       points.forEach((p, i) => {
@@ -102,20 +126,69 @@ export function SkyCanvas({
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // 星雲 → 天の川 → 星の順で奥から手前へ描く
+      // 星雲 → オーロラ → 天の川 → 星の順で奥から手前へ描く
       drawNebulae(ctx, nebulaeRef.current, width, height, time);
+      if (auroraRef.current) {
+        auroraRef.current.age += dt;
+        if (auroraRef.current.age >= auroraRef.current.life) {
+          auroraRef.current = null;
+        } else {
+          drawAurora(ctx, auroraRef.current, width, height, time);
+        }
+      }
       drawMilkyWayBand(ctx, width, height, MILKY_WAY_ANGLE);
       drawMilkyWayStars(ctx, milkyWayStarsRef.current, width, height);
       drawBackgroundStars(ctx, starsRef.current, width, height, time);
 
-      // 流れ星のスポーンと更新
-      nextSpawnRef.current -= dt;
-      if (nextSpawnRef.current <= 0 && shootingStarsRef.current.length < 2) {
-        shootingStarsRef.current.push(spawnShootingStar());
-        nextSpawnRef.current = 3500 + Math.random() * 5000;
+      // ── 夜空イベントのスケジューラ ──
+      // 数秒ごとに「ふつうの流れ星 / 火球 / 流星群 / 人工衛星 / オーロラ」の
+      // どれかが起こる。眺めているだけでも、たまに珍しいものが見られる。
+      nextEventInRef.current -= dt;
+      if (nextEventInRef.current <= 0) {
+        const roll = Math.random();
+        if (roll < 0.52) {
+          if (shootingStarsRef.current.length < 3) {
+            shootingStarsRef.current.push(spawnShootingStar());
+          }
+          nextEventInRef.current = 3000 + Math.random() * 4500;
+        } else if (roll < 0.64) {
+          // 火球: 大きく明るい流れ星(すこし珍しい)
+          shootingStarsRef.current.push(spawnShootingStar('fireball'));
+          nextEventInRef.current = 6000 + Math.random() * 6000;
+        } else if (roll < 0.76) {
+          // 流星群: 数秒のあいだに立てつづけに流れる
+          showerRef.current = { remaining: 4 + Math.floor(Math.random() * 4), nextIn: 0 };
+          nextEventInRef.current = 16000 + Math.random() * 14000;
+        } else if (roll < 0.9) {
+          // 人工衛星: またたかず、すーっと等速で横切る
+          if (satellitesRef.current.length < 1) {
+            satellitesRef.current.push(spawnSatellite());
+          }
+          nextEventInRef.current = 8000 + Math.random() * 8000;
+        } else {
+          // オーロラ: いちばん珍しい。しばらく空が色づく
+          if (!auroraRef.current) {
+            auroraRef.current = spawnAurora();
+          }
+          nextEventInRef.current = 25000 + Math.random() * 20000;
+        }
       }
+
+      // 流星群の連続スポーン
+      if (showerRef.current.remaining > 0) {
+        showerRef.current.nextIn -= dt;
+        if (showerRef.current.nextIn <= 0) {
+          shootingStarsRef.current.push(spawnShootingStar());
+          showerRef.current.remaining -= 1;
+          showerRef.current.nextIn = 250 + Math.random() * 650;
+        }
+      }
+
       shootingStarsRef.current = updateShootingStars(shootingStarsRef.current, dt, minDim);
       drawShootingStars(ctx, shootingStarsRef.current, width, height);
+
+      satellitesRef.current = updateSatellites(satellitesRef.current, dt, minDim);
+      drawSatellites(ctx, satellitesRef.current, width, height);
 
       // お手本ライン(結果表示時)
       const overlay = overlayRef.current;

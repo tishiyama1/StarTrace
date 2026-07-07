@@ -1,7 +1,10 @@
 .app-root {
   position: relative;
   width: 100vw;
+  /* iOSのSafariバーを除いた「実際に見える高さ」に合わせる。
+     100dvh 非対応ブラウザ向けに 100vh をフォールバックに置く。 */
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #050818;
 }
@@ -355,6 +358,42 @@
 
   .result-panel__actions {
     grid-area: actions;
+  }
+}
+
+/* みつからないね パネル */
+.result-panel--notfound {
+  border-color: rgba(160, 175, 220, 0.4);
+}
+
+.notfound__emoji {
+  font-size: 2.6rem;
+  animation: notfound-search 2.6s ease-in-out infinite;
+}
+
+.notfound__title {
+  margin: 8px 0 6px;
+  font-size: clamp(1.15rem, 5vw, 1.45rem);
+  color: #ffffff;
+  word-break: keep-all;
+}
+
+.notfound__text {
+  margin: 0 0 18px;
+  color: #cfe3ff;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+@keyframes notfound-search {
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
   }
 }
 
