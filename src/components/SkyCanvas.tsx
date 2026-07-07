@@ -19,8 +19,10 @@ import {
   drawHorizon,
   generateBrightStars,
   generateHorizon,
+  getMoonSprite,
   renderAtmosphere,
   renderStaticSky,
+  type MoonSpriteCache,
 } from '../lib/skyRenderer';
 
 interface PointerHandlers {
@@ -54,6 +56,7 @@ export function SkyCanvas({
   const brightStarsRef = useRef(generateBrightStars(300));
   const starSpritesRef = useRef<ReturnType<typeof createStarSprites> | null>(null);
   const horizonRef = useRef(generateHorizon());
+  const moonCacheRef = useRef<MoonSpriteCache>({});
 
   // 動的な天体(流れ星・人工衛星・オーロラ)とイベント予約
   const shootingStarsRef = useRef<ShootingStar[]>([]);
@@ -104,10 +107,15 @@ export function SkyCanvas({
 
     // 地球の自転の演出: 天球全体が画面中心のまわりをゆっくり回る(1周約40分)
     const ROTATION_PERIOD_MS = 40 * 60 * 1000;
+    // 月の満ち欠け: 自転と同じくらいの時間スケールで新月→満月→新月を一巡する
+    const MOON_CYCLE_MS = 40 * 60 * 1000;
+    const MOON_PHASE_OFFSET = 0.18; // 起動時は三日月あたりから始める
 
     // 開発・検証用の隠しフック: ?sky=aurora / shower / fireball / satellite で
-    // そのイベントをすぐに発生させる(通常利用では無害)。
-    const skyParam = new URLSearchParams(window.location.search).get('sky');
+    // そのイベントをすぐに発生、?moon=0〜1 で月相を固定できる(通常利用では無害)。
+    const params = new URLSearchParams(window.location.search);
+    const moonOverride = params.get('moon') !== null ? Number(params.get('moon')) : null;
+    const skyParam = params.get('sky');
     if (skyParam === 'aurora' && !auroraRef.current) {
       auroraRef.current = spawnAurora();
     } else if (skyParam === 'shower') {
@@ -140,6 +148,17 @@ export function SkyCanvas({
       ctx.translate(-domeSize / 2, -domeSize / 2);
       ctx.drawImage(skyDome, 0, 0, domeSize, domeSize);
       drawBrightStars(ctx, brightStarsRef.current, sprites, domeSize, domeSize, time);
+      // 月: 位相(満ち欠け)つきスプライトを天球に載せて一緒に回す
+      const moonPhase =
+        moonOverride !== null && Number.isFinite(moonOverride)
+          ? moonOverride
+          : (time / MOON_CYCLE_MS + MOON_PHASE_OFFSET) % 1;
+      const moonSprite = getMoonSprite(moonCacheRef.current, domeSize * 0.026, moonPhase);
+      ctx.drawImage(
+        moonSprite,
+        domeSize * 0.60 - moonSprite.width / 2,
+        domeSize * 0.27 - moonSprite.height / 2,
+      );
       ctx.restore();
 
       // オーロラ(画面固定。星や月はオーロラの奥で回りつづける)

@@ -236,49 +236,116 @@ export function renderStaticSky(size: number, dpr: number): HTMLCanvasElement {
     }
   }
 
-  // ---- 3. 月(三日月)。天球に焼き込むので空と一緒に回る ------------------
-  drawMoon(ctx, size * 0.60, size * 0.27, size * 0.026);
-
   return canvas;
 }
 
-/** 三日月を描く(ハロー+地球照+明るい弦)。 */
-function drawMoon(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number): void {
-  // 月あかりのハロー
-  const halo = ctx.createRadialGradient(x, y, radius * 0.6, x, y, radius * 4.6);
-  halo.addColorStop(0, 'rgba(235, 238, 250, 0.20)');
-  halo.addColorStop(0.4, 'rgba(225, 230, 250, 0.06)');
+// ---------------------------------------------------------------------------
+// 月(満ち欠けつき)。位相に応じたスプライトをキャッシュして毎フレーム転写する
+// ---------------------------------------------------------------------------
+
+/**
+ * 月の照らされている面積の割合(0=新月, 0.5=半月, 1=満月)。
+ * phase は 0〜1 の月齢位相(0=新月 → 0.5=満月 → 1=次の新月)。
+ */
+export function moonIlluminationFraction(phase: number): number {
+  return (1 - Math.cos(phase * Math.PI * 2)) / 2;
+}
+
+export interface MoonSpriteCache {
+  canvas?: HTMLCanvasElement;
+  phase?: number;
+  radius?: number;
+}
+
+/**
+ * 指定の位相の月スプライト(ハロー+地球照+照らされた面)を返す。
+ * 位相がほとんど変わっていない間はキャッシュを使い回すので、
+ * 毎フレーム呼んでも実質コストはかからない。
+ *
+ * 明暗境界(ターミネーター)は正しい月相の幾何で描く:
+ * 照らされた側の半円 + 半径 r·|cos(2πφ)| の楕円を、
+ * 三日月側では切り抜き・満月側では足し込む。
+ */
+export function getMoonSprite(cache: MoonSpriteCache, radius: number, phase: number): HTMLCanvasElement {
+  const normalized = ((phase % 1) + 1) % 1;
+  if (
+    cache.canvas &&
+    cache.radius === radius &&
+    cache.phase !== undefined &&
+    Math.abs(normalized - cache.phase) < 0.002
+  ) {
+    return cache.canvas;
+  }
+
+  const haloRadius = radius * 4.6;
+  const size = Math.ceil(haloRadius * 2) + 4;
+  const canvas = cache.canvas && cache.canvas.width === size ? cache.canvas : document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+  ctx.clearRect(0, 0, size, size);
+  const c = size / 2;
+
+  const fraction = moonIlluminationFraction(normalized);
+
+  // 月あかりのハロー(満月に近いほど明るく広がる)
+  const haloAlpha = 0.05 + 0.19 * fraction;
+  const halo = ctx.createRadialGradient(c, c, radius * 0.6, c, c, haloRadius);
+  halo.addColorStop(0, `rgba(235, 238, 250, ${haloAlpha})`);
+  halo.addColorStop(0.4, `rgba(225, 230, 250, ${haloAlpha * 0.3})`);
   halo.addColorStop(1, 'rgba(225, 230, 250, 0)');
   ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(x, y, radius * 4.6, 0, Math.PI * 2);
+  ctx.arc(c, c, haloRadius, 0, Math.PI * 2);
   ctx.fill();
 
-  // 地球照(影の側もごくうっすら見える)
-  ctx.fillStyle = 'rgba(205, 214, 236, 0.13)';
+  // 地球照(影の側がうっすら見える。新月に近いほど相対的に目立つ)
+  ctx.fillStyle = `rgba(205, 214, 236, ${0.05 + 0.1 * (1 - fraction)})`;
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(c, c, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // 三日月本体: 別キャンバスで「明るい円 − ずらした円」を切り抜いてから転写する
-  // (暗い円を上から重ねる方式だと、影の側が黒い円盤として見えてしまう)
-  const pad = 4;
-  const spriteSize = Math.ceil(radius * 2) + pad * 2;
-  const sprite = document.createElement('canvas');
-  sprite.width = spriteSize;
-  sprite.height = spriteSize;
-  const sctx = sprite.getContext('2d');
-  if (!sctx) return;
-  const c = spriteSize / 2;
-  sctx.fillStyle = '#f2ecdc';
-  sctx.beginPath();
-  sctx.arc(c, c, radius, 0, Math.PI * 2);
-  sctx.fill();
-  sctx.globalCompositeOperation = 'destination-out';
-  sctx.beginPath();
-  sctx.arc(c - radius * 0.42, c - radius * 0.10, radius * 0.94, 0, Math.PI * 2);
-  sctx.fill();
-  ctx.drawImage(sprite, x - c, y - c);
+  // 照らされた面: 別ミニキャンバスで半円+ターミネーター楕円を合成
+  if (fraction > 0.015) {
+    const mini = document.createElement('canvas');
+    const ms = Math.ceil(radius * 2) + 2;
+    mini.width = ms;
+    mini.height = ms;
+    const mctx = mini.getContext('2d');
+    if (mctx) {
+      const mc = ms / 2;
+      const k = Math.cos(normalized * Math.PI * 2); // +1=新月, 0=半月, -1=満月
+      const waxing = normalized < 0.5; // 満ちていく間は右側が光る(北半球の見え方)
+
+      // 照らされた側の半円
+      mctx.fillStyle = '#f2ecdc';
+      mctx.beginPath();
+      mctx.arc(mc, mc, radius, -Math.PI / 2, Math.PI / 2, !waxing);
+      mctx.closePath();
+      mctx.fill();
+
+      // ターミネーター(明暗境界)の楕円
+      const rx = radius * Math.abs(k);
+      if (rx > 0.2) {
+        if (k > 0) {
+          // 三日月側: 楕円ぶんを削る
+          mctx.globalCompositeOperation = 'destination-out';
+        }
+        mctx.beginPath();
+        mctx.ellipse(mc, mc, rx, radius, 0, 0, Math.PI * 2);
+        mctx.fill();
+        mctx.globalCompositeOperation = 'source-over';
+      }
+
+      ctx.drawImage(mini, c - mc, c - mc);
+    }
+  }
+
+  cache.canvas = canvas;
+  cache.phase = normalized;
+  cache.radius = radius;
+  return canvas;
 }
 
 /**
