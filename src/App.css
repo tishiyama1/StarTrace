@@ -1,7 +1,10 @@
 .app-root {
   position: relative;
   width: 100vw;
+  /* iOSのSafariバーを除いた「実際に見える高さ」に合わせる。
+     100dvh 非対応ブラウザ向けに 100vh をフォールバックに置く。 */
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #050818;
 }
