@@ -5,6 +5,9 @@ name: Deploy to AWS (S3 + CloudFront)
 on:
   push:
     branches: [main]
+    # メトリクスの自動コミット(データのみ)ではデプロイしない
+    paths-ignore:
+      - 'metrics/**'
   workflow_dispatch:
 
 # Avoid overlapping deploys stepping on each other.
