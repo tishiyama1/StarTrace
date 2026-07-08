@@ -4,6 +4,8 @@
 //   POST /api/visit      { clientId }                     -> register an anonymous searcher
 //   POST /api/discovery  { clientId, constellationId }    -> record a global discovery
 //   POST /api/feedback   { clientId, message, category }  -> store a feedback message
+//   POST /api/event      { clientId, type }               -> count a usage event (daily bucket)
+//   POST /api/error      { clientId, message, stack, url }-> record a client-side error
 //   GET  /api/stats                                        -> aggregate stats for the dashboard
 //
 // Data model (single DynamoDB table, keys pk / sk):
@@ -11,6 +13,8 @@
 //   pk=CONST   sk=<constellationId>  { count }
 //   pk=USER    sk=<clientId>         { createdAt }              (existence = unique searcher)
 //   pk=FEEDBACK sk=<createdAt>#<id>  { message, category, clientId, createdAt, issueCreated }
+//   pk=EVENT   sk=<YYYY-MM-DD>#<type> { count }                 (usage counters per day)
+//   pk=ERROR   sk=<createdAt>#<id>   { message, stack, url, ua, expiresAt } (TTL 30 days)
 //
 // No personal data is stored: clientId is a random anonymous id generated in the browser.
 
@@ -30,6 +34,18 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const MAX_FEEDBACK_LENGTH = 500;
 const MAX_ID_LENGTH = 64;
 const ALLOWED_CATEGORIES = ['star', 'visual', 'bug', 'other'];
+// 利用イベントの種類は許可リストで固定(任意文字列でのカーディナリティ爆発を防ぐ)
+const ALLOWED_EVENT_TYPES = [
+  'trace_hit', // なぞって星座が見つかった
+  'trace_notfound', // なぞったが「みつからないね」になった
+  'zukan_open',
+  'dashboard_open',
+  'feedback_open',
+  'app_error', // /api/error からも自動加算される
+];
+const MAX_ERROR_MESSAGE = 300;
+const MAX_ERROR_STACK = 1000;
+const ERROR_TTL_DAYS = 30;
 
 function json(statusCode, body) {
   return {
@@ -151,6 +167,63 @@ async function handleFeedback(body) {
   return json(200, { ok: true });
 }
 
+/** 日付キー(UTC)。日次バケットの単位 */
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** 利用イベントの日次カウンタを+1する */
+async function bumpEvent(type) {
+  await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE,
+      Key: { pk: 'EVENT', sk: `${todayKey()}#${type}` },
+      UpdateExpression: 'ADD #c :one',
+      ExpressionAttributeNames: { '#c': 'count' },
+      ExpressionAttributeValues: { ':one': 1 },
+    }),
+  );
+}
+
+async function handleEvent(body) {
+  if (!ALLOWED_EVENT_TYPES.includes(body.type)) {
+    return json(400, { error: 'unknown event type' });
+  }
+  await bumpEvent(body.type);
+  return json(200, { ok: true });
+}
+
+async function handleError(body) {
+  const message = typeof body.message === 'string' ? body.message.trim() : '';
+  if (!message) return json(400, { error: 'message is required' });
+
+  const createdAt = new Date().toISOString();
+  const id = randomUUID();
+  const expiresAt = Math.floor(Date.now() / 1000) + ERROR_TTL_DAYS * 24 * 60 * 60;
+
+  await Promise.all([
+    ddb.send(
+      new PutCommand({
+        TableName: TABLE,
+        Item: {
+          pk: 'ERROR',
+          sk: `${createdAt}#${id}`,
+          message: message.slice(0, MAX_ERROR_MESSAGE),
+          stack: typeof body.stack === 'string' ? body.stack.slice(0, MAX_ERROR_STACK) : '',
+          url: typeof body.url === 'string' ? body.url.slice(0, 200) : '',
+          ua: typeof body.ua === 'string' ? body.ua.slice(0, 200) : '',
+          clientId: cleanId(body.clientId),
+          createdAt,
+          expiresAt, // DynamoDB TTL で30日後に自動削除
+        },
+      }),
+    ),
+    bumpEvent('app_error'),
+  ]);
+
+  return json(200, { ok: true });
+}
+
 async function handleStats() {
   const [totals, consts] = await Promise.all([
     ddb.send(new GetCommand({ TableName: TABLE, Key: { pk: 'STATS', sk: 'TOTAL' } })),
@@ -193,6 +266,10 @@ export async function handler(event) {
           return await handleDiscovery(body);
         case '/api/feedback':
           return await handleFeedback(body);
+        case '/api/event':
+          return await handleEvent(body);
+        case '/api/error':
+          return await handleError(body);
         default:
           break;
       }
