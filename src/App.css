@@ -502,6 +502,83 @@
   line-height: 1;
 }
 
+/* メニュー(☰)のドロップダウン */
+.app-menu {
+  position: relative;
+  pointer-events: auto;
+}
+
+.app-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid rgba(255, 220, 150, 0.4);
+  border-radius: 14px;
+  background: rgba(15, 20, 48, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  animation: menu-pop 0.14s ease;
+}
+
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-menu__item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff8e1;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.app-menu__item:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) {
+  .app-menu__item:hover {
+    background: rgba(126, 232, 255, 0.12);
+  }
+}
+
+/* メニュー外タップで閉じるための透明レイヤー。
+   .top-bar(z-index:4)より背面に置き、ドロップダウンはトップバー内で前面に出す。
+   キャンバス(z-index auto)より前面なので画面のどこをタップしても閉じられる。 */
+.app-menu__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: default;
+}
+
 .nav-button__count {
   font-size: 0.95rem;
 }
@@ -1163,4 +1240,106 @@
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ===== リリースノート(アップデート)===== */
+.releasenotes {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(160deg, rgba(8, 12, 34, 0.97), rgba(20, 16, 46, 0.97));
+  backdrop-filter: blur(4px);
+  overflow-y: auto;
+}
+
+.releasenotes__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto 8px;
+}
+
+.releasenotes__title {
+  margin: 0;
+  font-size: clamp(1.2rem, 5vw, 1.6rem);
+  color: #fff8e1;
+}
+
+.releasenotes__close {
+  appearance: none;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.releasenotes__body {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.releasenotes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.release {
+  position: relative;
+  padding: 16px 16px 16px 18px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 220, 150, 0.22);
+}
+
+.release__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.release__emoji {
+  font-size: 1.6rem;
+}
+
+.release__title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #fff8e1;
+  word-break: keep-all;
+}
+
+.release__date {
+  color: #ffd97a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.release__items {
+  margin: 0;
+  padding-left: 20px;
+  color: #cfe3ff;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.release__items li {
+  margin-bottom: 3px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }

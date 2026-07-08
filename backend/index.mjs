@@ -41,6 +41,7 @@ const ALLOWED_EVENT_TYPES = [
   'zukan_open',
   'dashboard_open',
   'feedback_open',
+  'releasenotes_open',
   'app_error', // /api/error からも自動加算される
 ];
 const MAX_ERROR_MESSAGE = 300;

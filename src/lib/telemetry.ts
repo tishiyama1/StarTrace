@@ -11,7 +11,8 @@ export type UsageEventType =
   | 'trace_notfound'
   | 'zukan_open'
   | 'dashboard_open'
-  | 'feedback_open';
+  | 'feedback_open'
+  | 'releasenotes_open';
 
 function post(path: string, body: unknown): void {
   try {

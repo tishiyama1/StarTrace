@@ -7,6 +7,7 @@ import { SkyCanvas } from './components/SkyCanvas';
 import { Zukan } from './components/Zukan';
 import { Dashboard } from './components/Dashboard';
 import { FeedbackForm } from './components/FeedbackForm';
+import { ReleaseNotes } from './components/ReleaseNotes';
 import { CONSTELLATIONS } from './data/constellations';
 import { useStrokeInput } from './hooks/useStrokeInput';
 import { useViewportSize } from './hooks/useViewportSize';
@@ -38,6 +39,8 @@ function App() {
   const [showZukan, setShowZukan] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [hintExpired, setHintExpired] = useState(false);
 
@@ -109,7 +112,7 @@ function App() {
     reset();
   }, [reset]);
 
-  const anyOverlayOpen = showZukan || showDashboard || showFeedback;
+  const anyOverlayOpen = showZukan || showDashboard || showFeedback || showReleaseNotes;
   const resultShowing = result !== null || notFound;
   const canvasInteractive = !resultShowing && !anyOverlayOpen;
   const showTraceHint = canvasInteractive && currentStroke.length === 0 && !hintExpired;
@@ -145,19 +148,57 @@ function App() {
           >
             <span className="nav-button__icon" aria-hidden="true">🌍</span>
           </button>
-          <button
-            type="button"
-            className="nav-button"
-            onClick={() => {
-              sendEvent('feedback_open', clientId);
-              setShowFeedback(true);
-            }}
-            aria-label="いけんを おくる"
-          >
-            <span className="nav-button__icon" aria-hidden="true">💌</span>
-          </button>
+          <div className="app-menu">
+            <button
+              type="button"
+              className="nav-button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="メニュー"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+            >
+              <span className="nav-button__icon" aria-hidden="true">☰</span>
+            </button>
+            {menuOpen && (
+              <div className="app-menu__dropdown" role="menu">
+                <button
+                  type="button"
+                  className="app-menu__item"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    sendEvent('releasenotes_open', clientId);
+                    setShowReleaseNotes(true);
+                  }}
+                >
+                  <span aria-hidden="true">🆕</span> アップデート
+                </button>
+                <button
+                  type="button"
+                  className="app-menu__item"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    sendEvent('feedback_open', clientId);
+                    setShowFeedback(true);
+                  }}
+                >
+                  <span aria-hidden="true">💌</span> いけん・おといあわせ
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       </div>
+
+      {menuOpen && (
+        <button
+          type="button"
+          className="app-menu__backdrop"
+          aria-label="メニューを とじる"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       {showTraceHint && (
         <div className="trace-hint" aria-hidden="true">
@@ -203,6 +244,8 @@ function App() {
       {showFeedback && (
         <FeedbackForm clientId={clientId} onClose={() => setShowFeedback(false)} />
       )}
+
+      {showReleaseNotes && <ReleaseNotes onClose={() => setShowReleaseNotes(false)} />}
     </div>
   );
 }
