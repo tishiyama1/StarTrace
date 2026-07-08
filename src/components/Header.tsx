@@ -10,7 +10,7 @@ export function Header({ hint }: HeaderProps) {
         <span className="app-header__title-sub">ほしのなぞりがき</span>
       </h1>
       <p className="app-header__subtitle">
-        {hint ?? 'ゆびで よぞらを なぞって、せいざを みつけよう!?!?'}
+        {hint ?? 'ゆびで よぞらを なぞって、せいざを みつけよう!'}
       </p>
     </header>
   );
