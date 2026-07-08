@@ -1,36 +1,42 @@
-name: Daily metrics report
+name: Daily metrics snapshot
 
 # 毎朝、利用状況・フィードバック・エラーを DynamoDB から集めて
-# GitHub Issue(label: metrics)として投稿する。
-# 9:00 JST の改善提案 Routine(Claude)がこの Issue を入力として読む。
+# metrics/YYYY-MM-DD.json としてリポジトリ(main)にコミットする。
+# ここでは Issue を作らない(データの記録に徹する)。
+# 9:00 JST の改善提案 Routine(Claude)がこのファイルを入力として読み、
+# 日次レポート Issue と改善 Issue を作成する。
 on:
   schedule:
     - cron: '30 23 * * *' # 23:30 UTC = 08:30 JST
   workflow_dispatch:
 
+# メトリクスのコミット同士がぶつからないように直列化する。
+concurrency:
+  group: metrics-snapshot
+  cancel-in-progress: false
+
 permissions:
-  id-token: write
-  contents: read
-  issues: write
+  id-token: write # OIDC で AWS ロールを引き受ける
+  contents: write # metrics/ をコミットして push する
 
 env:
   AWS_REGION: ap-northeast-1
   STACK_NAME: startrace
 
 jobs:
-  report:
+  snapshot:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Collect metrics and create issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+      - name: Collect metrics into metrics/<date>.json
         run: |
           set -euo pipefail
 
@@ -40,6 +46,8 @@ jobs:
             --output text)"
 
           TODAY_JST="$(TZ=Asia/Tokyo date +%Y-%m-%d)"
+          CUTOFF="$(TZ=UTC date -d '7 days ago' +%Y-%m-%d)"
+          mkdir -p metrics
 
           # ---- 全体統計 --------------------------------------------------
           TOTALS="$(aws dynamodb get-item --table-name "$TABLE" --region "$AWS_REGION" \
@@ -47,67 +55,72 @@ jobs:
           USERS="$(echo "$TOTALS" | jq -r '.Item.users.N // "0"')"
           DISCOVERIES="$(echo "$TOTALS" | jq -r '.Item.discoveries.N // "0"')"
 
-          # ---- 星座別 発見数 上位 ---------------------------------------
-          CONST="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+          # ---- 星座別 発見数(全件・降順) --------------------------------
+          CONST_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --expression-attribute-values '{":p":{"S":"CONST"}}' --output json \
-            | jq -r '.Items | sort_by(-(.count.N|tonumber)) | .[:10][] | "| \(.sk.S) | \(.count.N) |"')"
+            | jq '[.Items[] | {id: .sk.S, count: (.count.N|tonumber)}] | sort_by(-.count)')"
 
           # ---- 利用イベント(直近7日ぶんの日次カウンタ) -------------------
-          EVENTS="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+          EVENTS_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --expression-attribute-values '{":p":{"S":"EVENT"}}' --output json \
-            | jq -r --arg cutoff "$(TZ=UTC date -d '7 days ago' +%Y-%m-%d)" \
-              '.Items | map(select(.sk.S >= $cutoff)) | sort_by(.sk.S) | reverse | .[] | "| \(.sk.S | split("#")[0]) | \(.sk.S | split("#")[1]) | \(.count.N) |"')"
+            | jq --arg cutoff "$CUTOFF" \
+              '[.Items[] | select(.sk.S >= $cutoff)
+                | {date: (.sk.S|split("#")[0]), type: (.sk.S|split("#")[1]), count: (.count.N|tonumber)}]
+               | sort_by(.date, .type) | reverse')"
 
           # ---- 未処理フィードバック --------------------------------------
-          FEEDBACK="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+          FEEDBACK_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --filter-expression "issueCreated = :f" \
             --expression-attribute-values '{":p":{"S":"FEEDBACK"},":f":{"BOOL":false}}' \
             --output json \
-            | jq -r '.Items | sort_by(.sk.S) | reverse | .[:15][] | "- [\(.category.S)] \(.message.S | gsub("\n"; " "))"')"
+            | jq '[.Items[] | {category: .category.S, message: .message.S, createdAt: .createdAt.S}]
+                  | sort_by(.createdAt) | reverse | .[:20]')"
 
           # ---- 直近のエラー ----------------------------------------------
-          ERRORS="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
+          ERRORS_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --expression-attribute-values '{":p":{"S":"ERROR"}}' \
-            --scan-index-forward false --max-items 10 --output json \
-            | jq -r '.Items[] | "- `\(.createdAt.S)` \(.message.S | gsub("\n"; " ")) (ua: \(.ua.S[:60]))"')"
+            --scan-index-forward false --max-items 15 --output json \
+            | jq '[.Items[] | {createdAt: .createdAt.S, message: .message.S, url: .url.S, ua: (.ua.S[:80])}]')"
 
-          BODY=$(cat <<MD
-          ## 📊 StarTrace 日次メトリクス ($TODAY_JST)
+          jq -n \
+            --arg date "$TODAY_JST" \
+            --arg generatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson users "$USERS" \
+            --argjson discoveries "$DISCOVERIES" \
+            --argjson constellations "$CONST_JSON" \
+            --argjson events "$EVENTS_JSON" \
+            --argjson feedback "$FEEDBACK_JSON" \
+            --argjson errors "$ERRORS_JSON" \
+            '{
+              date: $date,
+              generatedAt: $generatedAt,
+              totals: { users: $users, discoveries: $discoveries },
+              events7d: $events,
+              constellations: $constellations,
+              feedbackUnprocessed: $feedback,
+              errorsRecent: $errors
+            }' > "metrics/${TODAY_JST}.json"
 
-          ### 全体
-          | 指標 | 値 |
-          |---|---|
-          | さがした人数(累計) | $USERS |
-          | 発見ごうけい(累計) | $DISCOVERIES |
+          echo "wrote metrics/${TODAY_JST}.json"
 
-          ### 利用イベント(直近7日・日次)
-          | 日付 | イベント | 回数 |
-          |---|---|---|
-          ${EVENTS:-| - | データなし | - |}
-
-          ### 星座別 発見数 上位
-          | 星座 | 回数 |
-          |---|---|
-          ${CONST:-| データなし | - |}
-
-          ### 未処理フィードバック(最新15件)
-          ${FEEDBACK:-なし}
-
-          ### 直近のエラー(最大10件)
-          ${ERRORS:-なし}
-
-          ---
-          このIssueは \`daily-metrics\` ワークフローによる自動投稿です。
-          9:00 JST の改善提案 Routine がこのデータを入力として使います。
-          MD
-          )
-
-          gh label create metrics --color 5319E7 --description "自動収集メトリクス" 2>/dev/null || true
-          gh issue create \
-            --title "📊 日次メトリクス $TODAY_JST" \
-            --label metrics \
-            --body "$BODY"
+      - name: Commit snapshot
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add metrics/
+          if git diff --cached --quiet; then
+            echo "no metrics change"
+            exit 0
+          fi
+          git commit -m "chore(metrics): snapshot $(TZ=Asia/Tokyo date +%Y-%m-%d)"
+          # 競合時に備えてリベースしてから push(最大3回)
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            git pull --rebase origin main
+          done
+          git push
