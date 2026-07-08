@@ -290,7 +290,7 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       TimeToLiveSpecification:
-        # エラーサンプルは expiresAt(エポック秒)で30日後に自動削除される
+        # error samples auto-expire after 30 days (expiresAt, epoch seconds)
         AttributeName: expiresAt
         Enabled: true
 
