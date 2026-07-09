@@ -29,7 +29,10 @@ Parameters:
   GitHubBranch:
     Type: String
     Default: main
-    Description: Branch that is allowed to assume the deploy role.
+    Description: >-
+      Kept for backward compatibility with existing deploy commands. The role
+      now trusts any ref of the repo (see GitHubDeployRole), so this value is
+      no longer used to restrict which branch may assume the role.
 
   ExistingGitHubOIDCProviderArn:
     Type: String
@@ -226,8 +229,14 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                # Only the configured branch of this repo may assume the role.
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}'
+              StringLike:
+                # Any ref of this repo (branch, tag, and scheduled runs) may
+                # assume the role. Scheduled workflows such as daily-metrics do
+                # not always run under refs/heads/main, so pinning to a single
+                # branch made them fail with "Not authorized to perform
+                # sts:AssumeRoleWithWebIdentity". Fork PRs cannot assume it:
+                # they are not granted id-token (OIDC) permissions.
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}/${GitHubRepo}:*'
       Policies:
         - PolicyName: deploy-static-site
           PolicyDocument:
