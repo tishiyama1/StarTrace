@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchStats, recordDiscovery, registerVisit, submitFeedback } from './api';
+import {
+  backfillDiscovery,
+  fetchStats,
+  recordDiscovery,
+  registerVisit,
+  submitFeedback,
+} from './api';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -32,6 +38,19 @@ describe('recordDiscovery / registerVisit', () => {
   it('returns false on non-ok status', async () => {
     mockFetch(() => new Response('{}', { status: 500 }));
     expect(await recordDiscovery('c', 'orion')).toBe(false);
+  });
+
+  it('backfillDiscovery marks the request with backfill: true', async () => {
+    const spy = mockFetch(() => new Response('{}', { status: 200 }));
+    const ok = await backfillDiscovery('client-1', 'orion');
+    expect(ok).toBe(true);
+    const [url, init] = spy.mock.calls[0];
+    expect(url).toContain('/api/discovery');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      clientId: 'client-1',
+      constellationId: 'orion',
+      backfill: true,
+    });
   });
 });
 

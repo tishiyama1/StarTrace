@@ -40,6 +40,15 @@ export function recordDiscovery(clientId: string, constellationId: string): Prom
   return postJson('/api/discovery', { clientId, constellationId });
 }
 
+/**
+ * ブラウザに既にある図鑑をサーバーへ後から同期する(バックフィル)。
+ * のべ発見数・星座別カウントは増やさず、ユーザーごとのユニーク発見だけを
+ * 登録する。サーバー側は冪等なので、何度送っても二重加算されない。
+ */
+export function backfillDiscovery(clientId: string, constellationId: string): Promise<boolean> {
+  return postJson('/api/discovery', { clientId, constellationId, backfill: true });
+}
+
 /** Submit a feedback message. Returns whether it was accepted. */
 export function submitFeedback(
   clientId: string,
