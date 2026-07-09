@@ -1,0 +1,180 @@
+{
+  "date": "2026-07-10",
+  "generatedAt": "2026-07-09T15:18:30Z",
+  "totals": {
+    "users": 6,
+    "discoveries": 351
+  },
+  "events7d": [
+    {
+      "date": "2026-07-09",
+      "type": "trace_notfound",
+      "count": 49
+    },
+    {
+      "date": "2026-07-09",
+      "type": "trace_hit",
+      "count": 27
+    },
+    {
+      "date": "2026-07-09",
+      "type": "dashboard_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-09",
+      "type": "app_error",
+      "count": 1
+    },
+    {
+      "date": "2026-07-08",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_notfound",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_hit",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "dashboard_open",
+      "count": 2
+    }
+  ],
+  "constellations": [
+    {
+      "id": "cassiopeia",
+      "count": 50
+    },
+    {
+      "id": "pegasus",
+      "count": 36
+    },
+    {
+      "id": "ursa-major",
+      "count": 31
+    },
+    {
+      "id": "heart",
+      "count": 28
+    },
+    {
+      "id": "gemini",
+      "count": 25
+    },
+    {
+      "id": "ramen",
+      "count": 22
+    },
+    {
+      "id": "scorpius",
+      "count": 20
+    },
+    {
+      "id": "lightning",
+      "count": 16
+    },
+    {
+      "id": "mushroom",
+      "count": 16
+    },
+    {
+      "id": "cat",
+      "count": 15
+    },
+    {
+      "id": "taurus",
+      "count": 15
+    },
+    {
+      "id": "orion",
+      "count": 13
+    },
+    {
+      "id": "aquila",
+      "count": 10
+    },
+    {
+      "id": "ursa-minor",
+      "count": 9
+    },
+    {
+      "id": "cepheus",
+      "count": 8
+    },
+    {
+      "id": "leo",
+      "count": 8
+    },
+    {
+      "id": "delphinus",
+      "count": 7
+    },
+    {
+      "id": "ghost",
+      "count": 6
+    },
+    {
+      "id": "lyra",
+      "count": 6
+    },
+    {
+      "id": "cygnus",
+      "count": 4
+    },
+    {
+      "id": "mona-lisa",
+      "count": 4
+    },
+    {
+      "id": "rocket",
+      "count": 2
+    }
+  ],
+  "feedbackUnprocessed": [
+    {
+      "category": "star",
+      "message": "もっとふやして",
+      "createdAt": "2026-07-08T11:58:36.756Z"
+    },
+    {
+      "category": "star",
+      "message": "星座をつくって",
+      "createdAt": "2026-07-08T11:47:30.755Z"
+    },
+    {
+      "category": "star",
+      "message": "みずがめ座をいれて",
+      "createdAt": "2026-07-08T11:39:26.930Z"
+    },
+    {
+      "category": "star",
+      "message": "おとめ座もいれて",
+      "createdAt": "2026-07-08T11:29:19.151Z"
+    },
+    {
+      "category": "star",
+      "message": "モナリザ座じゃなくてモナリ座の方がシャレがきいてていいとおもう",
+      "createdAt": "2026-07-08T11:08:02.168Z"
+    },
+    {
+      "category": "other",
+      "message": "ひとりへいきん(みんな)が22を超えているのはおかしいと思う",
+      "createdAt": "2026-07-08T11:06:59.510Z"
+    }
+  ],
+  "errorsRecent": [
+    {
+      "createdAt": "2026-07-09T05:31:36.246Z",
+      "message": "Script error.",
+      "url": "/",
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
+    }
+  ]
+}
