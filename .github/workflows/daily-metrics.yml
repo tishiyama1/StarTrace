@@ -83,7 +83,7 @@ jobs:
           ERRORS_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --expression-attribute-values '{":p":{"S":"ERROR"}}' \
-            --scan-index-forward false --max-items 15 --output json \
+            --no-scan-index-forward --max-items 15 --output json \
             | jq '[.Items[] | {createdAt: .createdAt.S, message: .message.S, url: .url.S, ua: (.ua.S[:80])}]')"
 
           jq -n \
