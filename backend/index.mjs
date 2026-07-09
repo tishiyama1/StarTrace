@@ -9,9 +9,10 @@
 //   GET  /api/stats                                        -> aggregate stats for the dashboard
 //
 // Data model (single DynamoDB table, keys pk / sk):
-//   pk=STATS   sk=TOTAL              { users, discoveries }
+//   pk=STATS   sk=TOTAL              { users, discoveries, uniqueDiscoveries }
 //   pk=CONST   sk=<constellationId>  { count }
 //   pk=USER    sk=<clientId>         { createdAt }              (existence = unique searcher)
+//   pk=UDISC   sk=<clientId>#<constellationId> { createdAt }    (existence = that user already found it)
 //   pk=FEEDBACK sk=<createdAt>#<id>  { message, category, clientId, createdAt, issueCreated }
 //   pk=EVENT   sk=<YYYY-MM-DD>#<type> { count }                 (usage counters per day)
 //   pk=ERROR   sk=<createdAt>#<id>   { message, stack, url, ua, expiresAt } (TTL 30 days)
@@ -108,6 +109,42 @@ async function handleVisit(body) {
   return json(200, { ok: true });
 }
 
+/**
+ * Records that `clientId` has found `constellationId` for the first time by
+ * bumping the STATS/TOTAL `uniqueDiscoveries` counter (a per-user-per-constellation
+ * tally, unlike `discoveries` which counts every discovery event). No-ops for
+ * repeat finds and for anonymous calls without a clientId.
+ */
+async function recordUniqueDiscovery(clientId, constellationId) {
+  if (!clientId) return;
+  try {
+    await ddb.send(
+      new PutCommand({
+        TableName: TABLE,
+        Item: {
+          pk: 'UDISC',
+          sk: `${clientId}#${constellationId}`,
+          createdAt: new Date().toISOString(),
+        },
+        ConditionExpression: 'attribute_not_exists(pk)',
+      }),
+    );
+  } catch (err) {
+    if (err?.name !== 'ConditionalCheckFailedException') throw err;
+    return; // already found by this user -> not unique, don't bump the counter
+  }
+
+  await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE,
+      Key: { pk: 'STATS', sk: 'TOTAL' },
+      UpdateExpression: 'ADD #u :one',
+      ExpressionAttributeNames: { '#u': 'uniqueDiscoveries' },
+      ExpressionAttributeValues: { ':one': 1 },
+    }),
+  );
+}
+
 async function handleDiscovery(body) {
   const clientId = cleanId(body.clientId);
   const constellationId = cleanId(body.constellationId);
@@ -134,6 +171,7 @@ async function handleDiscovery(body) {
         ExpressionAttributeValues: { ':one': 1 },
       }),
     ),
+    recordUniqueDiscovery(clientId, constellationId),
   ]);
 
   return json(200, { ok: true });
@@ -245,6 +283,7 @@ async function handleStats() {
   return json(200, {
     totalUsers: totals.Item?.users ?? 0,
     totalDiscoveries: totals.Item?.discoveries ?? 0,
+    uniqueDiscoveries: totals.Item?.uniqueDiscoveries ?? 0,
     constellations,
   });
 }

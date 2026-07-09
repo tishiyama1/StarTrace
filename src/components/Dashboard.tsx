@@ -93,7 +93,7 @@ function DashboardBody({
 
   const myKinds = discovered.size;
   const averagePerPlayer =
-    stats.totalUsers > 0 ? stats.totalDiscoveries / stats.totalUsers : 0;
+    stats.totalUsers > 0 ? stats.uniqueDiscoveries / stats.totalUsers : 0;
 
   return (
     <div className="dashboard__body">
