@@ -13,7 +13,7 @@ import { useStrokeInput } from './hooks/useStrokeInput';
 import { useViewportSize } from './hooks/useViewportSize';
 import { useDiscoveries } from './hooks/useDiscoveries';
 import { useClientId } from './hooks/useClientId';
-import { recordDiscovery } from './lib/api';
+import { backfillDiscovery, recordDiscovery } from './lib/api';
 import { installErrorReporter, sendEvent } from './lib/telemetry';
 import {
   DISCOVERY_SCORE_THRESHOLD,
@@ -57,6 +57,23 @@ function App() {
   useEffect(() => {
     installErrorReporter(clientId);
   }, [clientId]);
+
+  // 既にブラウザに貯まっている図鑑を、一度だけサーバーへ同期する(バックフィル)。
+  // ダッシュボードの「ひとり平均」を過去分から正確にするため。サーバー側は
+  // 冪等なので二重加算はされないが、毎回送らないよう端末に印を付けておく。
+  useEffect(() => {
+    if (!clientId) return;
+    const SYNC_FLAG = 'startrace.discoveries.synced.v1';
+    try {
+      if (localStorage.getItem(SYNC_FLAG)) return;
+      localStorage.setItem(SYNC_FLAG, new Date().toISOString());
+    } catch {
+      return; // localStorage が使えない環境では同期しない
+    }
+    for (const id of discoveries.discovered) {
+      void backfillDiscovery(clientId, id);
+    }
+  }, [clientId, discoveries.discovered]);
 
   const handleStrokeEnd = useCallback(
     (stroke: Point[]) => {

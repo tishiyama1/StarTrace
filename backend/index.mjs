@@ -152,27 +152,36 @@ async function handleDiscovery(body) {
 
   await registerUser(clientId);
 
-  await Promise.all([
-    ddb.send(
-      new UpdateCommand({
-        TableName: TABLE,
-        Key: { pk: 'CONST', sk: constellationId },
-        UpdateExpression: 'ADD #c :one',
-        ExpressionAttributeNames: { '#c': 'count' },
-        ExpressionAttributeValues: { ':one': 1 },
-      }),
-    ),
-    ddb.send(
-      new UpdateCommand({
-        TableName: TABLE,
-        Key: { pk: 'STATS', sk: 'TOTAL' },
-        UpdateExpression: 'ADD #d :one',
-        ExpressionAttributeNames: { '#d': 'discoveries' },
-        ExpressionAttributeValues: { ':one': 1 },
-      }),
-    ),
-    recordUniqueDiscovery(clientId, constellationId),
-  ]);
+  // バックフィル(ブラウザに既にある図鑑を後から同期する)のときは、
+  // ユーザーごとのユニーク発見だけを記録し、のべ発見数・星座別カウントは
+  // 増やさない(再送されても二重加算されないようにするため)。
+  const backfillOnly = body.backfill === true;
+
+  const ops = [recordUniqueDiscovery(clientId, constellationId)];
+  if (!backfillOnly) {
+    ops.push(
+      ddb.send(
+        new UpdateCommand({
+          TableName: TABLE,
+          Key: { pk: 'CONST', sk: constellationId },
+          UpdateExpression: 'ADD #c :one',
+          ExpressionAttributeNames: { '#c': 'count' },
+          ExpressionAttributeValues: { ':one': 1 },
+        }),
+      ),
+      ddb.send(
+        new UpdateCommand({
+          TableName: TABLE,
+          Key: { pk: 'STATS', sk: 'TOTAL' },
+          UpdateExpression: 'ADD #d :one',
+          ExpressionAttributeNames: { '#d': 'discoveries' },
+          ExpressionAttributeValues: { ':one': 1 },
+        }),
+      ),
+    );
+  }
+
+  await Promise.all(ops);
 
   return json(200, { ok: true });
 }

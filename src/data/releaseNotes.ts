@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-07-10',
+    emoji: '📖',
+    title: 'これまでの ずかんも へいきんに はんえい',
+    items: [
+      'いままでに あつめた せいざも「ひとり へいきん」に かぞえるように なったよ',
+    ],
+  },
+  {
     date: '2026-07-09',
     emoji: '🌍',
     title: 'ダッシュボードの ひょうじを かいぜん',
