@@ -9,6 +9,8 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? '';
 export interface GlobalStats {
   totalUsers: number;
   totalDiscoveries: number;
+  /** Sum across all users of each user's count of distinct constellations found (0-22 per user). */
+  uniqueDiscoveries: number;
   /** constellationId -> global find count */
   constellations: Record<string, number>;
 }

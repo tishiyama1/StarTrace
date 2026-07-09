@@ -53,7 +53,12 @@ describe('fetchStats', () => {
     mockFetch(
       () =>
         new Response(
-          JSON.stringify({ totalUsers: 3, totalDiscoveries: 10, constellations: { orion: 4 } }),
+          JSON.stringify({
+            totalUsers: 3,
+            totalDiscoveries: 10,
+            uniqueDiscoveries: 7,
+            constellations: { orion: 4 },
+          }),
           { status: 200 },
         ),
     );
