@@ -1,13 +1,15 @@
 name: Daily metrics snapshot
 
-# 毎朝、利用状況・フィードバック・エラーを DynamoDB から集めて
+# 毎日 0:00 JST に、利用状況・フィードバック・エラーを DynamoDB から集めて
 # metrics/YYYY-MM-DD.json としてリポジトリ(main)にコミットする。
 # ここでは Issue を作らない(データの記録に徹する)。
-# 9:00 JST の改善提案 Routine(Claude)がこのファイルを入力として読み、
+# 5:00 JST の改善提案 Routine(Claude)がこのファイルを入力として読み、
 # 日次レポート Issue と改善 Issue を作成する。
+# GitHub のスケジュールは混雑時に1〜2時間遅延しうるため、Routine(5:00 JST)まで
+# 十分な余裕をとって早い時刻(0:00 JST)に寄せている。
 on:
   schedule:
-    - cron: '30 23 * * *' # 23:30 UTC = 08:30 JST
+    - cron: '0 15 * * *' # 15:00 UTC = 00:00 JST
   workflow_dispatch:
 
 # メトリクスのコミット同士がぶつからないように直列化する。
