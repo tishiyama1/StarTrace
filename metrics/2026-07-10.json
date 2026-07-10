@@ -1,25 +1,40 @@
 {
   "date": "2026-07-10",
-  "generatedAt": "2026-07-09T15:18:30Z",
+  "generatedAt": "2026-07-10T00:03:02Z",
   "totals": {
     "users": 6,
-    "discoveries": 351
+    "discoveries": 372
   },
   "events7d": [
     {
       "date": "2026-07-09",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-09",
       "type": "trace_notfound",
-      "count": 49
+      "count": 51
     },
     {
       "date": "2026-07-09",
       "type": "trace_hit",
-      "count": 27
+      "count": 48
+    },
+    {
+      "date": "2026-07-09",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-09",
+      "type": "feedback_open",
+      "count": 4
     },
     {
       "date": "2026-07-09",
       "type": "dashboard_open",
-      "count": 2
+      "count": 8
     },
     {
       "date": "2026-07-09",
@@ -54,15 +69,15 @@
     },
     {
       "id": "pegasus",
-      "count": 36
+      "count": 45
+    },
+    {
+      "id": "heart",
+      "count": 32
     },
     {
       "id": "ursa-major",
       "count": 31
-    },
-    {
-      "id": "heart",
-      "count": 28
     },
     {
       "id": "gemini",
@@ -77,19 +92,19 @@
       "count": 20
     },
     {
+      "id": "mushroom",
+      "count": 18
+    },
+    {
       "id": "lightning",
       "count": 16
     },
     {
-      "id": "mushroom",
+      "id": "taurus",
       "count": 16
     },
     {
       "id": "cat",
-      "count": 15
-    },
-    {
-      "id": "taurus",
       "count": 15
     },
     {
@@ -98,15 +113,15 @@
     },
     {
       "id": "aquila",
-      "count": 10
+      "count": 11
+    },
+    {
+      "id": "cepheus",
+      "count": 9
     },
     {
       "id": "ursa-minor",
       "count": 9
-    },
-    {
-      "id": "cepheus",
-      "count": 8
     },
     {
       "id": "leo",
@@ -117,16 +132,16 @@
       "count": 7
     },
     {
+      "id": "lyra",
+      "count": 7
+    },
+    {
       "id": "ghost",
       "count": 6
     },
     {
-      "id": "lyra",
-      "count": 6
-    },
-    {
       "id": "cygnus",
-      "count": 4
+      "count": 5
     },
     {
       "id": "mona-lisa",
@@ -134,10 +149,30 @@
     },
     {
       "id": "rocket",
-      "count": 2
+      "count": 3
     }
   ],
   "feedbackUnprocessed": [
+    {
+      "category": "star",
+      "message": "書いた形とぜんぜんちがう星座が出る、はっきりハートを書いたのに四角のペガサスになったり、キノコを書いたのにハートになったり、流石に違いすぎて萎える",
+      "createdAt": "2026-07-09T22:57:35.161Z"
+    },
+    {
+      "category": "star",
+      "message": "22個見つけたから増やして欲しい",
+      "createdAt": "2026-07-09T22:26:37.686Z"
+    },
+    {
+      "category": "visual",
+      "message": "見つけた星座を空に表示しておくといいかも",
+      "createdAt": "2026-07-09T22:26:07.952Z"
+    },
+    {
+      "category": "visual",
+      "message": "空はきれいなのに月はあんまりだね、クレーターとかないし",
+      "createdAt": "2026-07-09T22:25:27.780Z"
+    },
     {
       "category": "star",
       "message": "もっとふやして",
