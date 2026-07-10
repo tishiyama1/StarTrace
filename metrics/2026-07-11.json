@@ -1,0 +1,225 @@
+{
+  "date": "2026-07-11",
+  "generatedAt": "2026-07-10T16:54:46Z",
+  "totals": {
+    "users": 6,
+    "discoveries": 372
+  },
+  "events7d": [
+    {
+      "date": "2026-07-10",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-10",
+      "type": "dashboard_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-09",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-09",
+      "type": "trace_notfound",
+      "count": 51
+    },
+    {
+      "date": "2026-07-09",
+      "type": "trace_hit",
+      "count": 48
+    },
+    {
+      "date": "2026-07-09",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-09",
+      "type": "feedback_open",
+      "count": 4
+    },
+    {
+      "date": "2026-07-09",
+      "type": "dashboard_open",
+      "count": 8
+    },
+    {
+      "date": "2026-07-09",
+      "type": "app_error",
+      "count": 1
+    },
+    {
+      "date": "2026-07-08",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_notfound",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_hit",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "dashboard_open",
+      "count": 2
+    }
+  ],
+  "constellations": [
+    {
+      "id": "cassiopeia",
+      "count": 50
+    },
+    {
+      "id": "pegasus",
+      "count": 45
+    },
+    {
+      "id": "heart",
+      "count": 32
+    },
+    {
+      "id": "ursa-major",
+      "count": 31
+    },
+    {
+      "id": "gemini",
+      "count": 25
+    },
+    {
+      "id": "ramen",
+      "count": 22
+    },
+    {
+      "id": "scorpius",
+      "count": 20
+    },
+    {
+      "id": "mushroom",
+      "count": 18
+    },
+    {
+      "id": "lightning",
+      "count": 16
+    },
+    {
+      "id": "taurus",
+      "count": 16
+    },
+    {
+      "id": "cat",
+      "count": 15
+    },
+    {
+      "id": "orion",
+      "count": 13
+    },
+    {
+      "id": "aquila",
+      "count": 11
+    },
+    {
+      "id": "cepheus",
+      "count": 9
+    },
+    {
+      "id": "ursa-minor",
+      "count": 9
+    },
+    {
+      "id": "leo",
+      "count": 8
+    },
+    {
+      "id": "delphinus",
+      "count": 7
+    },
+    {
+      "id": "lyra",
+      "count": 7
+    },
+    {
+      "id": "ghost",
+      "count": 6
+    },
+    {
+      "id": "cygnus",
+      "count": 5
+    },
+    {
+      "id": "mona-lisa",
+      "count": 4
+    },
+    {
+      "id": "rocket",
+      "count": 3
+    }
+  ],
+  "feedbackUnprocessed": [
+    {
+      "category": "star",
+      "message": "書いた形とぜんぜんちがう星座が出る、はっきりハートを書いたのに四角のペガサスになったり、キノコを書いたのにハートになったり、流石に違いすぎて萎える",
+      "createdAt": "2026-07-09T22:57:35.161Z"
+    },
+    {
+      "category": "star",
+      "message": "22個見つけたから増やして欲しい",
+      "createdAt": "2026-07-09T22:26:37.686Z"
+    },
+    {
+      "category": "visual",
+      "message": "見つけた星座を空に表示しておくといいかも",
+      "createdAt": "2026-07-09T22:26:07.952Z"
+    },
+    {
+      "category": "visual",
+      "message": "空はきれいなのに月はあんまりだね、クレーターとかないし",
+      "createdAt": "2026-07-09T22:25:27.780Z"
+    },
+    {
+      "category": "star",
+      "message": "もっとふやして",
+      "createdAt": "2026-07-08T11:58:36.756Z"
+    },
+    {
+      "category": "star",
+      "message": "星座をつくって",
+      "createdAt": "2026-07-08T11:47:30.755Z"
+    },
+    {
+      "category": "star",
+      "message": "みずがめ座をいれて",
+      "createdAt": "2026-07-08T11:39:26.930Z"
+    },
+    {
+      "category": "star",
+      "message": "おとめ座もいれて",
+      "createdAt": "2026-07-08T11:29:19.151Z"
+    },
+    {
+      "category": "star",
+      "message": "モナリザ座じゃなくてモナリ座の方がシャレがきいてていいとおもう",
+      "createdAt": "2026-07-08T11:08:02.168Z"
+    },
+    {
+      "category": "other",
+      "message": "ひとりへいきん(みんな)が22を超えているのはおかしいと思う",
+      "createdAt": "2026-07-08T11:06:59.510Z"
+    }
+  ],
+  "errorsRecent": [
+    {
+      "createdAt": "2026-07-09T05:31:36.246Z",
+      "message": "Script error.",
+      "url": "/",
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
+    }
+  ]
+}
