@@ -243,6 +243,30 @@ export function renderStaticSky(size: number, dpr: number): HTMLCanvasElement {
 // 月(満ち欠けつき)。位相に応じたスプライトをキャッシュして毎フレーム転写する
 // ---------------------------------------------------------------------------
 
+interface MoonCrater {
+  x: number; // 中心からのオフセット(月半径に対する比率, -1〜1)
+  y: number;
+  r: number; // クレーター半径(月半径に対する比率)
+  shade: number; // 影の濃さ(0〜1)
+}
+
+/** 固定シードで生成した月面のクレーター配置(毎回同じ「いつもの月」になる)。 */
+const MOON_CRATERS: MoonCrater[] = (() => {
+  const rand = mulberry32(90210);
+  const craters: MoonCrater[] = [];
+  for (let i = 0; i < 11; i++) {
+    const angle = rand() * Math.PI * 2;
+    const dist = Math.sqrt(rand()) * 0.82;
+    craters.push({
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist,
+      r: 0.06 + rand() * 0.16,
+      shade: 0.18 + rand() * 0.22,
+    });
+  }
+  return craters;
+})();
+
 /**
  * 月の照らされている面積の割合(0=新月, 0.5=半月, 1=満月)。
  * phase は 0〜1 の月齢位相(0=新月 → 0.5=満月 → 1=次の新月)。
@@ -337,6 +361,24 @@ export function getMoonSprite(cache: MoonSpriteCache, radius: number, phase: num
         mctx.fill();
         mctx.globalCompositeOperation = 'source-over';
       }
+
+      // クレーター: source-atopで、すでに照らされている面の内側だけに重ねる
+      // (欠けている側は自動的に隠れるので、ターミネーターの形状に関わらず安全)
+      mctx.globalCompositeOperation = 'source-atop';
+      for (const crater of MOON_CRATERS) {
+        const cx2 = mc + crater.x * radius;
+        const cy2 = mc + crater.y * radius;
+        const cr = crater.r * radius;
+        const craterGrad = mctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, cr);
+        craterGrad.addColorStop(0, `rgba(118, 110, 94, ${crater.shade})`);
+        craterGrad.addColorStop(0.75, `rgba(150, 140, 120, ${crater.shade * 0.4})`);
+        craterGrad.addColorStop(1, 'rgba(150, 140, 120, 0)');
+        mctx.fillStyle = craterGrad;
+        mctx.beginPath();
+        mctx.arc(cx2, cy2, cr, 0, Math.PI * 2);
+        mctx.fill();
+      }
+      mctx.globalCompositeOperation = 'source-over';
 
       ctx.drawImage(mini, c - mc, c - mc);
     }
