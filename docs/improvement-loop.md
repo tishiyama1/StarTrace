@@ -43,17 +43,22 @@ StarTrace の「収集 → 分析 → 改善」を自動で回すしくみ。
   **30日で自動削除**(DynamoDB TTL)。1セッション最大5件に制限。
 - **フィードバック** `POST /api/feedback`(既存)。
 - 個人情報は一切収集しない(匿名ランダムIDのみ)。
-- **保管**: `.github/workflows/daily-metrics.yml` が毎朝 8:30 JST に DynamoDB を集計し、
+- **保管**: `.github/workflows/daily-metrics.yml` が毎日 **0:00 JST** に DynamoDB を集計し、
   `metrics/YYYY-MM-DD.json` を main にコミットする(**Issueは作らない**)。
   スキーマは `metrics/README.md` を参照。
+  GitHub のスケジュールは混雑時に1〜2時間遅延しうるため、Routine(5:00 JST)より
+  十分早い 0:00 JST に寄せてある。
 
-## 2. 分析と改善(毎朝 9:00 JST — Claude Code Routine)
+## 2. 分析と改善(毎朝 5:00 JST — Claude Code Routine)
 
 Claude Code の Routine(定期実行)が新しいセッションで起動し、次を行う。
 
 ### 2.1 入力を読む
 
-1. `metrics/` の**当日分(なければ最新)JSON**を読む。
+1. `metrics/` の JSON を読む。**鮮度ガード**: 当日(JST)の `metrics/<今日>.json` が
+   存在するときだけ、それを入力として通常の処理を行う。当日ファイルがまだ無い場合は、
+   古い日付のファイルで当日レポートを作らず、「本日のメトリクス未取得」とだけ記録して
+   改善はスキップする(集計ワークフローの遅延・失敗で古い数字を出さないため)。
 2. open な `improvement` Issue(重複回避)、`feedback` ラベルの Issue、直近の PR履歴を読む。
 3. データが無い/取得できない日は、その旨だけ書いて終了(無理に提案をひねり出さない)。
 
