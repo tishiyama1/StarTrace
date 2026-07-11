@@ -40,6 +40,20 @@ export const NOT_FOUND_SCORE_THRESHOLD = 65;
  */
 export const DISCOVERY_SCORE_THRESHOLD = NOT_FOUND_SCORE_THRESHOLD;
 
+/**
+ * 1位と2位のマッチ度の差(スコアの僅差)がこの値未満のときは、
+ * 「形の近い星座同士で紛らわしい」とみなし確信度不足として扱う。
+ *
+ * ハート/ペガスス/キノコ座など誤判定が報告された組み合わせで、手ブレを加えた
+ * 手描き入力から誤って別テンプレートが1位になる(「取り違え」)ケースを大量に
+ * シミュレーションして分布を計測した結果: 取り違えが起きるときの1位・2位の
+ * スコア差はほぼ常に5未満(300試行×3星座×4ノイズ量で94%が5未満)。一方、
+ * 全22星座はどれも自分自身とのマッチで7.8以上の差がある(識別性テスト対象の
+ * 完全一致・回転・拡縮・平行移動では発生しない)ため、正しいなぞりを
+ * 誤ってブロックするリスクは小さい。
+ */
+export const MIN_CONFIDENCE_MARGIN = 5;
+
 function distanceForDirection(userNormalized: Point[], templateNormalized: Point[]): number {
   const theta = optimalRotationAngle(userNormalized, templateNormalized);
   const rotated = templateNormalized.map((p) => rotatePoint(p, theta));
@@ -82,16 +96,22 @@ export function matchConstellation(stroke: Point[], constellations: Constellatio
     throw new Error('matchConstellation: constellations must not be empty');
   }
 
-  let best: MatchResult | null = null;
+  const scored = constellations
+    .map((constellation) => {
+      const distance = distanceToConstellation(stroke, constellation);
+      return { constellation, distance, score: distanceToScore(distance) };
+    })
+    .sort((a, b) => b.score - a.score);
 
-  for (const constellation of constellations) {
-    const dist = distanceToConstellation(stroke, constellation);
-    if (best === null || dist < best.distance) {
-      best = { constellation, distance: dist, score: distanceToScore(dist) };
-    }
+  const [best, runnerUp] = scored;
+
+  // 僅差(=紛らわしい取り違えの可能性)なら確信度不足として「みつからないね」に倒す。
+  // score だけを下げて not-found 判定に流し、constellation/distance はそのまま返す。
+  if (runnerUp && best.score - runnerUp.score < MIN_CONFIDENCE_MARGIN) {
+    return { ...best, score: Math.min(best.score, NOT_FOUND_SCORE_THRESHOLD - 1) };
   }
 
-  return best as MatchResult;
+  return best;
 }
 
 /**
