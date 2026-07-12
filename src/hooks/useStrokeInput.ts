@@ -27,15 +27,20 @@ export function useStrokeInput({ onStrokeEnd }: UseStrokeInputOptions): UseStrok
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   const strokeRef = useRef<Point[]>([]);
+  // 現在ストロークを描いている指(pointerId)。他の指のイベントはこれと一致するまで無視する。
+  const activePointerIdRef = useRef<number | null>(null);
 
   const reset = useCallback(() => {
     strokeRef.current = [];
+    activePointerIdRef.current = null;
     setCurrentStroke([]);
     setIsDrawing(false);
   }, []);
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerIdRef.current !== null) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    activePointerIdRef.current = e.pointerId;
     const point = getRelativePoint(e);
     strokeRef.current = [point];
     setCurrentStroke([point]);
@@ -44,6 +49,7 @@ export function useStrokeInput({ onStrokeEnd }: UseStrokeInputOptions): UseStrok
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerId !== activePointerIdRef.current) return;
       if (!strokeRef.current.length) return;
       const point = getRelativePoint(e);
       strokeRef.current = [...strokeRef.current, point];
@@ -56,22 +62,28 @@ export function useStrokeInput({ onStrokeEnd }: UseStrokeInputOptions): UseStrok
     if (strokeRef.current.length > 0) {
       onStrokeEnd(strokeRef.current);
     }
+    activePointerIdRef.current = null;
     setIsDrawing(false);
   }, [onStrokeEnd]);
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerId !== activePointerIdRef.current) return;
       e.currentTarget.releasePointerCapture(e.pointerId);
       finishStroke();
     },
     [finishStroke],
   );
 
-  const onPointerLeave = useCallback(() => {
-    if (isDrawing) {
-      finishStroke();
-    }
-  }, [isDrawing, finishStroke]);
+  const onPointerLeave = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerId !== activePointerIdRef.current) return;
+      if (isDrawing) {
+        finishStroke();
+      }
+    },
+    [isDrawing, finishStroke],
+  );
 
   return {
     isDrawing,
