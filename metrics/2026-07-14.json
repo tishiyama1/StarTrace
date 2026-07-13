@@ -1,0 +1,335 @@
+{
+  "date": "2026-07-14",
+  "generatedAt": "2026-07-13T17:11:28Z",
+  "totals": {
+    "users": 10,
+    "discoveries": 430
+  },
+  "events7d": [
+    {
+      "date": "2026-07-13",
+      "type": "zukan_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-13",
+      "type": "trace_notfound",
+      "count": 31
+    },
+    {
+      "date": "2026-07-13",
+      "type": "trace_hit",
+      "count": 13
+    },
+    {
+      "date": "2026-07-13",
+      "type": "feedback_open",
+      "count": 3
+    },
+    {
+      "date": "2026-07-12",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-12",
+      "type": "trace_notfound",
+      "count": 20
+    },
+    {
+      "date": "2026-07-12",
+      "type": "trace_hit",
+      "count": 11
+    },
+    {
+      "date": "2026-07-12",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-12",
+      "type": "feedback_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-12",
+      "type": "dashboard_open",
+      "count": 3
+    },
+    {
+      "date": "2026-07-11",
+      "type": "trace_notfound",
+      "count": 17
+    },
+    {
+      "date": "2026-07-11",
+      "type": "trace_hit",
+      "count": 33
+    },
+    {
+      "date": "2026-07-11",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-11",
+      "type": "feedback_open",
+      "count": 3
+    },
+    {
+      "date": "2026-07-11",
+      "type": "dashboard_open",
+      "count": 6
+    },
+    {
+      "date": "2026-07-10",
+      "type": "trace_notfound",
+      "count": 2
+    },
+    {
+      "date": "2026-07-10",
+      "type": "trace_hit",
+      "count": 1
+    },
+    {
+      "date": "2026-07-10",
+      "type": "releasenotes_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-10",
+      "type": "dashboard_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-09",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-09",
+      "type": "trace_notfound",
+      "count": 51
+    },
+    {
+      "date": "2026-07-09",
+      "type": "trace_hit",
+      "count": 48
+    },
+    {
+      "date": "2026-07-09",
+      "type": "releasenotes_open",
+      "count": 1
+    },
+    {
+      "date": "2026-07-09",
+      "type": "feedback_open",
+      "count": 4
+    },
+    {
+      "date": "2026-07-09",
+      "type": "dashboard_open",
+      "count": 8
+    },
+    {
+      "date": "2026-07-09",
+      "type": "app_error",
+      "count": 1
+    },
+    {
+      "date": "2026-07-08",
+      "type": "zukan_open",
+      "count": 2
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_notfound",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "trace_hit",
+      "count": 16
+    },
+    {
+      "date": "2026-07-08",
+      "type": "dashboard_open",
+      "count": 2
+    }
+  ],
+  "constellations": [
+    {
+      "id": "cassiopeia",
+      "count": 62
+    },
+    {
+      "id": "heart",
+      "count": 47
+    },
+    {
+      "id": "pegasus",
+      "count": 47
+    },
+    {
+      "id": "ursa-major",
+      "count": 31
+    },
+    {
+      "id": "ramen",
+      "count": 27
+    },
+    {
+      "id": "gemini",
+      "count": 25
+    },
+    {
+      "id": "scorpius",
+      "count": 23
+    },
+    {
+      "id": "lightning",
+      "count": 19
+    },
+    {
+      "id": "mushroom",
+      "count": 18
+    },
+    {
+      "id": "cat",
+      "count": 16
+    },
+    {
+      "id": "taurus",
+      "count": 16
+    },
+    {
+      "id": "orion",
+      "count": 14
+    },
+    {
+      "id": "aquila",
+      "count": 12
+    },
+    {
+      "id": "lyra",
+      "count": 12
+    },
+    {
+      "id": "ursa-minor",
+      "count": 12
+    },
+    {
+      "id": "cepheus",
+      "count": 10
+    },
+    {
+      "id": "delphinus",
+      "count": 8
+    },
+    {
+      "id": "leo",
+      "count": 8
+    },
+    {
+      "id": "mona-lisa",
+      "count": 8
+    },
+    {
+      "id": "ghost",
+      "count": 6
+    },
+    {
+      "id": "cygnus",
+      "count": 5
+    },
+    {
+      "id": "rocket",
+      "count": 4
+    }
+  ],
+  "feedbackUnprocessed": [
+    {
+      "category": "star",
+      "message": "12星座揃ってないのはおかしい、絶対に揃えるべき、最優先で対応すること",
+      "createdAt": "2026-07-13T11:47:06.978Z"
+    },
+    {
+      "category": "bug",
+      "message": "図鑑を見て書いても見つからないになる\n上下逆さまも認めるのやめた方がいいんじゃない？",
+      "createdAt": "2026-07-13T11:44:12.592Z"
+    },
+    {
+      "category": "bug",
+      "message": "指2本で書くと変になる",
+      "createdAt": "2026-07-11T13:14:45.012Z"
+    },
+    {
+      "category": "star",
+      "message": "おおぐまざというより北斗七星じゃん",
+      "createdAt": "2026-07-11T13:14:01.677Z"
+    },
+    {
+      "category": "star",
+      "message": "12星座は必須でしょ",
+      "createdAt": "2026-07-11T13:13:27.575Z"
+    },
+    {
+      "category": "star",
+      "message": "書いた形とぜんぜんちがう星座が出る、はっきりハートを書いたのに四角のペガサスになったり、キノコを書いたのにハートになったり、流石に違いすぎて萎える",
+      "createdAt": "2026-07-09T22:57:35.161Z"
+    },
+    {
+      "category": "star",
+      "message": "22個見つけたから増やして欲しい",
+      "createdAt": "2026-07-09T22:26:37.686Z"
+    },
+    {
+      "category": "visual",
+      "message": "見つけた星座を空に表示しておくといいかも",
+      "createdAt": "2026-07-09T22:26:07.952Z"
+    },
+    {
+      "category": "visual",
+      "message": "空はきれいなのに月はあんまりだね、クレーターとかないし",
+      "createdAt": "2026-07-09T22:25:27.780Z"
+    },
+    {
+      "category": "star",
+      "message": "もっとふやして",
+      "createdAt": "2026-07-08T11:58:36.756Z"
+    },
+    {
+      "category": "star",
+      "message": "星座をつくって",
+      "createdAt": "2026-07-08T11:47:30.755Z"
+    },
+    {
+      "category": "star",
+      "message": "みずがめ座をいれて",
+      "createdAt": "2026-07-08T11:39:26.930Z"
+    },
+    {
+      "category": "star",
+      "message": "おとめ座もいれて",
+      "createdAt": "2026-07-08T11:29:19.151Z"
+    },
+    {
+      "category": "star",
+      "message": "モナリザ座じゃなくてモナリ座の方がシャレがきいてていいとおもう",
+      "createdAt": "2026-07-08T11:08:02.168Z"
+    },
+    {
+      "category": "other",
+      "message": "ひとりへいきん(みんな)が22を超えているのはおかしいと思う",
+      "createdAt": "2026-07-08T11:06:59.510Z"
+    }
+  ],
+  "errorsRecent": [
+    {
+      "createdAt": "2026-07-09T05:31:36.246Z",
+      "message": "Script error.",
+      "url": "/",
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
+    }
+  ]
+}
