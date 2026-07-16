@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Point } from '../types';
+import { CONSTELLATIONS } from '../data/constellations';
 import {
   drawAurora,
   drawSatellites,
@@ -16,14 +17,23 @@ import {
 import {
   createStarSprites,
   drawBrightStars,
+  drawDiscoveredConstellations,
   drawHorizon,
   generateBrightStars,
+  generateConstellationSlots,
   generateHorizon,
   getMoonSprite,
   renderAtmosphere,
   renderStaticSky,
+  type DiscoveredConstellationItem,
   type MoonSpriteCache,
 } from '../lib/skyRenderer';
+
+/**
+ * 発見済み星座の夜空スロット。`CONSTELLATIONS` の並び順に対して決定的なので、
+ * 発見の前後で他の星座の位置がずれない(モジュールスコープで一度だけ生成)。
+ */
+const CONSTELLATION_SLOTS = generateConstellationSlots(CONSTELLATIONS.length);
 
 interface PointerHandlers {
   onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
@@ -37,6 +47,7 @@ interface SkyCanvasProps {
   height: number;
   currentStroke: Point[];
   overlayPoints: Point[] | null;
+  discovered: Set<string>;
   interactive: boolean;
   pointerHandlers: PointerHandlers;
 }
@@ -46,6 +57,7 @@ export function SkyCanvas({
   height,
   currentStroke,
   overlayPoints,
+  discovered,
   interactive,
   pointerHandlers,
 }: SkyCanvasProps) {
@@ -69,6 +81,7 @@ export function SkyCanvas({
 
   const strokeRef = useRef<Point[]>(currentStroke);
   const overlayRef = useRef<Point[] | null>(overlayPoints);
+  const discoveredItemsRef = useRef<DiscoveredConstellationItem[]>([]);
   const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
@@ -78,6 +91,16 @@ export function SkyCanvas({
   useEffect(() => {
     overlayRef.current = overlayPoints;
   }, [overlayPoints]);
+
+  useEffect(() => {
+    discoveredItemsRef.current = CONSTELLATIONS.reduce<DiscoveredConstellationItem[]>(
+      (acc, c, idx) => {
+        if (discovered.has(c.id)) acc.push({ path: c.path, slot: CONSTELLATION_SLOTS[idx] });
+        return acc;
+      },
+      [],
+    );
+  }, [discovered]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -148,6 +171,8 @@ export function SkyCanvas({
       ctx.translate(-domeSize / 2, -domeSize / 2);
       ctx.drawImage(skyDome, 0, 0, domeSize, domeSize);
       drawBrightStars(ctx, brightStarsRef.current, sprites, domeSize, domeSize, time);
+      // 発見済み星座: 自分専用のスロットに、ごく淡いミニチュアのお手本形を定常表示
+      drawDiscoveredConstellations(ctx, discoveredItemsRef.current, domeSize, time);
       // 月: 位相(満ち欠け)つきスプライトを天球に載せて一緒に回す
       const moonPhase =
         moonOverride !== null && Number.isFinite(moonOverride)

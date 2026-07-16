@@ -229,6 +229,7 @@ function App() {
         height={height}
         currentStroke={currentStroke}
         overlayPoints={overlayPoints}
+        discovered={discoveries.discovered}
         interactive={canvasInteractive}
         pointerHandlers={handlers}
       />
