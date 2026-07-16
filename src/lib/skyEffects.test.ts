@@ -9,8 +9,10 @@ import {
   type ShootingStar,
 } from './skyEffects';
 import {
+  drawDiscoveredConstellations,
   fbm2,
   generateBrightStars,
+  generateConstellationSlots,
   generateHorizon,
   moonIlluminationFraction,
   mulberry32,
@@ -203,6 +205,81 @@ describe('aurora', () => {
     expect(auroraEnvelope(a)).toBeCloseTo(1, 5);
     a.age = a.life;
     expect(auroraEnvelope(a)).toBe(0);
+  });
+});
+
+describe('generateConstellationSlots', () => {
+  it('is deterministic and keeps every slot within the dome (0..1)', () => {
+    const a = generateConstellationSlots(25);
+    const b = generateConstellationSlots(25);
+    expect(a).toEqual(b);
+    for (const slot of a) {
+      expect(slot.x).toBeGreaterThan(0);
+      expect(slot.x).toBeLessThan(1);
+      expect(slot.y).toBeGreaterThan(0);
+      expect(slot.y).toBeLessThan(1);
+    }
+  });
+
+  it('spreads slots out so no two constellations share a spot', () => {
+    const slots = generateConstellationSlots(25);
+    for (let i = 0; i < slots.length; i++) {
+      for (let j = i + 1; j < slots.length; j++) {
+        const dist = Math.hypot(slots[i].x - slots[j].x, slots[i].y - slots[j].y);
+        expect(dist).toBeGreaterThan(0.01);
+      }
+    }
+  });
+
+  it('returns an empty array for zero constellations', () => {
+    expect(generateConstellationSlots(0)).toEqual([]);
+  });
+});
+
+describe('drawDiscoveredConstellations', () => {
+  function makeCtxMock() {
+    return {
+      save: () => {},
+      restore: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      fill: () => {},
+      arc: () => {},
+      globalAlpha: 1,
+      strokeStyle: '',
+      lineWidth: 1,
+      fillStyle: '',
+    } as unknown as CanvasRenderingContext2D;
+  }
+
+  it('does nothing when there is nothing discovered yet', () => {
+    const ctx = makeCtxMock();
+    expect(() => drawDiscoveredConstellations(ctx, [], 800, 0)).not.toThrow();
+  });
+
+  it('draws each discovered constellation without throwing', () => {
+    const ctx = makeCtxMock();
+    const slots = generateConstellationSlots(2);
+    const items = [
+      {
+        path: [
+          { x: 10, y: 10 },
+          { x: 50, y: 20 },
+          { x: 30, y: 60 },
+        ],
+        slot: slots[0],
+      },
+      {
+        path: [
+          { x: 0, y: 0 },
+          { x: 100, y: 100 },
+        ],
+        slot: slots[1],
+      },
+    ];
+    expect(() => drawDiscoveredConstellations(ctx, items, 800, 1234)).not.toThrow();
   });
 });
 

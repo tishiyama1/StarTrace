@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-07-17',
+    emoji: '✨',
+    title: 'みつけた星座が よぞらに のこるように!',
+    items: [
+      'いちど みつけた星座は、そのあとも よぞらに うっすら ひかって のこるようになったよ。ずかんを ひらかなくても、そらを みれば なかまが ふえたのが わかるよ',
+    ],
+  },
+  {
     date: '2026-07-16',
     emoji: '🌾',
     title: 'おとめ座が なかまいり!',

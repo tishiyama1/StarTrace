@@ -10,6 +10,8 @@
  * イベント(流れ星等)だけなので、リッチな見た目と 60fps を両立できる。
  */
 
+import type { Point } from '../types';
+
 // ---------------------------------------------------------------------------
 // 乱数とノイズ(シード付き・決定的。空の模様が毎回同じ「いつもの夜空」になる)
 // ---------------------------------------------------------------------------
@@ -632,5 +634,99 @@ export function drawHorizon(
       ctx.fill();
     }
   }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// 発見済み星座(夜空に定常表示する、ごく淡いミニチュアのお手本形)
+// ---------------------------------------------------------------------------
+
+const GOLDEN_ANGLE = 2.399963229728653;
+
+export interface ConstellationSlot {
+  /** ドーム座標中の位置(0〜1、ドーム一辺に対する比率) */
+  x: number;
+  y: number;
+}
+
+/**
+ * 星座の数だけ、ドーム全体にひまわりの種状(黄金角スパイラル)で
+ * 重なりにくく配置したスロットを返す。星座IDの並び順(`CONSTELLATIONS`の順序)
+ * に対して決定的なので、発見の前後で他の星座の位置が動くことはない。
+ */
+export function generateConstellationSlots(total: number): ConstellationSlot[] {
+  if (total <= 0) return [];
+  const slots: ConstellationSlot[] = [];
+  for (let i = 0; i < total; i++) {
+    const angle = i * GOLDEN_ANGLE;
+    const r = 0.06 + Math.sqrt((i + 0.5) / total) * 0.42;
+    slots.push({ x: 0.5 + r * Math.cos(angle), y: 0.5 + r * Math.sin(angle) });
+  }
+  return slots;
+}
+
+export interface DiscoveredConstellationItem {
+  path: Point[];
+  slot: ConstellationSlot;
+}
+
+/**
+ * 発見済み星座のお手本シルエットを、ドーム上の自分専用スロットに
+ * ごく淡く定常表示する。なぞり判定用のオーバーレイ(金の点線)や
+ * 現在なぞっている線(水色の光る線)とは異なる、控えめな見た目にして
+ * 邪魔にならないようにしている。
+ */
+export function drawDiscoveredConstellations(
+  ctx: CanvasRenderingContext2D,
+  items: DiscoveredConstellationItem[],
+  domeSize: number,
+  time: number,
+): void {
+  if (items.length === 0) return;
+  const boxSize = domeSize * 0.048;
+  ctx.save();
+  items.forEach((item, i) => {
+    const { path, slot } = item;
+    if (path.length < 2) return;
+    const xs = path.map((p) => p.x);
+    const ys = path.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = Math.max(1e-3, maxX - minX);
+    const spanY = Math.max(1e-3, maxY - minY);
+    const scale = boxSize / Math.max(spanX, spanY);
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
+    const cx = slot.x * domeSize;
+    const cy = slot.y * domeSize;
+
+    const toScreen = (p: Point) => ({
+      x: cx + (p.x - midX) * scale,
+      y: cy + (p.y - midY) * scale,
+    });
+
+    // ゆっくりとした個別の明滅(星座ごとに位相をずらす)
+    const twinkle = 0.5 + 0.22 * Math.sin(time * 0.00055 + i * 2.1);
+    ctx.globalAlpha = twinkle;
+    ctx.strokeStyle = 'rgba(195, 212, 255, 0.5)';
+    ctx.lineWidth = Math.max(0.6, domeSize * 0.0009);
+    ctx.beginPath();
+    path.forEach((p, idx) => {
+      const sp = toScreen(p);
+      if (idx === 0) ctx.moveTo(sp.x, sp.y);
+      else ctx.lineTo(sp.x, sp.y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(225, 234, 255, 0.8)';
+    for (const p of path) {
+      const sp = toScreen(p);
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, boxSize * 0.045, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
   ctx.restore();
 }
