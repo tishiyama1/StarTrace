@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-07-18',
+    emoji: '🐏',
+    title: 'おひつじ座が なかまいり!',
+    items: [
+      'あたらしく「おひつじ座」が ふえたよ。いちばん あかるい星「ハマル」から つづく、まがった かぎづめの かたちを なぞってみてね',
+    ],
+  },
+  {
     date: '2026-07-17',
     emoji: '✨',
     title: 'みつけた星座が よぞらに のこるように!',
