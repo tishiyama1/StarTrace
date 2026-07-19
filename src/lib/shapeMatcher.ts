@@ -6,6 +6,7 @@ import {
   rotatePoint,
   meanPointDistance,
   pathLength,
+  secondaryCornerRatio,
 } from './geometry';
 import { resamplePath } from './resample';
 
@@ -53,6 +54,74 @@ export const DISCOVERY_SCORE_THRESHOLD = NOT_FOUND_SCORE_THRESHOLD;
  * 誤ってブロックするリスクは小さい。
  */
 export const MIN_CONFIDENCE_MARGIN = 5;
+
+/**
+ * gemini(ふたご座)/taurus(おうし座)限定のタイブレークで使う定数(issue #38)。
+ *
+ * MIN_CONFIDENCE_MARGIN による僅差ブロックの過剰検出は、実測(23星座×手ブレ2〜12%
+ * ×150試行=20,700試行)の59%が gemini/taurus 単独ペアの取り違えだった。この2つは
+ * 全体距離では紛らわしいが、形の構造ははっきり異なる: gemini は「コの字」で
+ * ほぼ同じ鋭さの曲がり角が2つ(双子それぞれの頭の折れ)あるのに対し、taurus は
+ * 「よこに広いV」で鋭い折れ角が1つ(顔まわり)+その後は2本のツノがほぼ直線、という
+ * 構造(secondaryCornerRatio でお手本同士を比べると gemini≈0.19, taurus≈0.02)。
+ *
+ * この非対称性を使い、このペア限定で「僅差」を解きほぐす。他のペアの判定・
+ * MIN_CONFIDENCE_MARGIN 自体には一切影響しない。
+ */
+const GEMINI_TAURUS_CORNER_WINDOW = 5;
+
+/**
+ * ストロークの secondaryCornerRatio が gemini/taurus どちらのお手本の比に近いかを比べ、
+ * その差がこの値未満(=どちらとも言い切れない)なら手を出さず、通常どおり
+ * 「みつからないね」に倒す。
+ *
+ * 手ブレ2〜12%相当のノイズを加えた gemini/taurus 各300試行×6段階のシミュレーションで、
+ * 0.12 は「正しいなぞりの取りこぼし(みつからないねへの誤ブロック)を大きく減らしつつ、
+ * 確信度高い誤マッチ(取り違え)をほぼ0(高ノイズ12%でも1.3%程度)に抑える」バランス点として
+ * 選んだ(0.05等もっと小さい値では正解率はやや上がるが取り違えも増える)。
+ */
+const GEMINI_TAURUS_CORNER_RATIO_MIN_GAP = 0.12;
+
+function isGeminiTaurusPair(idA: string, idB: string): boolean {
+  return (idA === 'gemini' && idB === 'taurus') || (idA === 'taurus' && idB === 'gemini');
+}
+
+interface ScoredCandidate {
+  constellation: Constellation;
+  distance: number;
+  score: number;
+}
+
+/**
+ * gemini/taurus 限定のタイブレーク本体。
+ * ストローク自身の secondaryCornerRatio を両テンプレートのそれと比較し、
+ * はっきりどちらかに近ければそちらを返す。差が僅かなら null を返し、
+ * 呼び出し側で通常どおりの「みつからないね」処理に委ねる。
+ */
+function resolveGeminiTaurusTie(
+  stroke: Point[],
+  best: ScoredCandidate,
+  runnerUp: ScoredCandidate,
+): ScoredCandidate | null {
+  const geminiCandidate = best.constellation.id === 'gemini' ? best : runnerUp;
+  const taurusCandidate = best.constellation.id === 'taurus' ? best : runnerUp;
+
+  const cornerRatioOf = (points: Point[]) =>
+    secondaryCornerRatio(resamplePath(points, RESAMPLE_POINTS), GEMINI_TAURUS_CORNER_WINDOW);
+
+  const userRatio = cornerRatioOf(stroke);
+  const geminiRatio = cornerRatioOf(geminiCandidate.constellation.path);
+  const taurusRatio = cornerRatioOf(taurusCandidate.constellation.path);
+
+  const distanceToGemini = Math.abs(userRatio - geminiRatio);
+  const distanceToTaurus = Math.abs(userRatio - taurusRatio);
+
+  if (Math.abs(distanceToGemini - distanceToTaurus) < GEMINI_TAURUS_CORNER_RATIO_MIN_GAP) {
+    return null;
+  }
+
+  return distanceToGemini < distanceToTaurus ? geminiCandidate : taurusCandidate;
+}
 
 function distanceForDirection(userNormalized: Point[], templateNormalized: Point[]): number {
   const theta = optimalRotationAngle(userNormalized, templateNormalized);
@@ -108,6 +177,14 @@ export function matchConstellation(stroke: Point[], constellations: Constellatio
   // 僅差(=紛らわしい取り違えの可能性)なら確信度不足として「みつからないね」に倒す。
   // score だけを下げて not-found 判定に流し、constellation/distance はそのまま返す。
   if (runnerUp && best.score - runnerUp.score < MIN_CONFIDENCE_MARGIN) {
+    // gemini/taurus 限定: 全体距離では僅差でも、形の構造(曲がり角の数と鋭さ)で
+    // はっきり決着がつくならブロックしない(issue #38)。他のペアはこれまでどおり。
+    if (isGeminiTaurusPair(best.constellation.id, runnerUp.constellation.id)) {
+      const resolved = resolveGeminiTaurusTie(stroke, best, runnerUp);
+      if (resolved) {
+        return resolved;
+      }
+    }
     return { ...best, score: Math.min(best.score, NOT_FOUND_SCORE_THRESHOLD - 1) };
   }
 
