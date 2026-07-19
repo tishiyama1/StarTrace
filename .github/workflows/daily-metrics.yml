@@ -72,13 +72,19 @@ jobs:
                 | {date: (.sk.S|split("#")[0]), type: (.sk.S|split("#")[1]), count: (.count.N|tonumber)}]
                | sort_by(.date, .type) | reverse')"
 
-          # ---- 未処理フィードバック --------------------------------------
+          # ---- 未処理フィードバック(直近14日ぶんのみ) --------------------
+          # 対応済みでも issueCreated フラグが更新されない運用のため、古いFBが
+          # いつまでも「未処理」として残り、毎日蒸し返されてしまう。直近14日に
+          # 絞ることで、決着済みの古いFBを自然に落とす(新しい声だけ拾う)。
+          FB_CUTOFF="$(TZ=UTC date -d '14 days ago' +%Y-%m-%d)"
           FEEDBACK_JSON="$(aws dynamodb query --table-name "$TABLE" --region "$AWS_REGION" \
             --key-condition-expression "pk = :p" \
             --filter-expression "issueCreated = :f" \
             --expression-attribute-values '{":p":{"S":"FEEDBACK"},":f":{"BOOL":false}}' \
             --output json \
-            | jq '[.Items[] | {category: .category.S, message: .message.S, createdAt: .createdAt.S}]
+            | jq --arg fbcut "$FB_CUTOFF" \
+                '[.Items[] | {category: .category.S, message: .message.S, createdAt: .createdAt.S}]
+                  | map(select((.createdAt[0:10]) >= $fbcut))
                   | sort_by(.createdAt) | reverse | .[:20]')"
 
           # ---- 直近のエラー ----------------------------------------------

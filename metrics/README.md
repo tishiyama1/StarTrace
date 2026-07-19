@@ -21,7 +21,7 @@
   "constellations": [                 // 星座別の累計発見数(降順)
     { "id": "orion", "count": 0 }
   ],
-  "feedbackUnprocessed": [            // 未Issue化のフィードバック(最新20)
+  "feedbackUnprocessed": [            // 未処理フィードバック(直近14日・最新20)
     { "category": "bug", "message": "...", "createdAt": "..." }
   ],
   "errorsRecent": [                   // 直近のクライアントエラー(最新15)
