@@ -42,7 +42,9 @@ node --check backend/index.mjs  # Lambda の構文チェック
 
 ## 自律改善ループ
 
-「収集 → 分析 → 提案 → 実装 → 承認 → マージ → 本番」を AI が回す。人間は監督のみ（`hold` ラベルで除外、revert、Routine 一時停止）。
+**現在の運用モード: アグレッシブ（積極改善）。** シグナル待ちをやめ、ロードマップから自発的に改善・コンテンツ拡充を続ける。保守版（反応的・1日1件）のスナップショットは `docs/archive/2026-07-25-conservative/`。戻したいときはそれを復元。
+
+「収集 → 分析 → 提案 → 実装 → 承認 → マージ → 本番」を AI が回す。人間は監督のみ（`hold` ラベルで除外、revert、Routine 一時停止）。アグレッシブでも**壊さない床**（CI緑必須・`infra/**`と`.github/**`の自動変更禁止・1PR=revert可能）は厳守。
 
 - **Builder（毎朝5:00 JST）**: `metrics/` を分析し、日次レポート＋改善Issueを起票、承認済みを実装して **PR 作成**（マージしない）。規約は **`docs/improvement-loop.md`**。
 - **Reviewer（毎朝6:00 JST）**: Issue を承認し、CI緑を確認して **PR をマージ**。基準は **`docs/reviewer-policy.md`**。
