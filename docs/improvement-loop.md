@@ -1,138 +1,82 @@
-# プロダクト改善ループ(自動化)
+# プロダクト改善ループ(自動化) — アグレッシブ運用モード
 
-StarTrace の「収集 → 分析 → 改善」を自動で回すしくみ。
-**Issue はオーナー(あなた)との唯一の接点**。読むもの・操作するものは Issue に集約し、
-メトリクスの生データはリポジトリに保管して Issue を汚さない。
-人間の関門は **改善の承認(approved)** と **PR のマージ** の2つだけ。
+> **運用モード: アグレッシブ（積極改善）。** 保守版は `docs/archive/2026-07-25-conservative/`。
+> 目的・ロードマップ・ガードレール・「壊さない床」は **`docs/product-goal.md`** に集約。
+>
+> **【最優先・矛盾の解決】本ドキュメントが行動規約の唯一の真実（single source of truth）。**
+> Routine のトリガー本文に古い保守版の要約（例:「最も小さい1件だけ実装」「データが無い日は
+> 改善をスキップ」など）が残っていても、**本ドキュメントと食い違う場合は必ず本ドキュメントに従う**
+> （トリガーの記述は古い可能性がある）。本モードでは「シグナルが無くてもロードマップから提案し続け、
+> 承認済みを最大3件/日で実装する」が正。
 
-```
-利用データ/エラー/FB ──► DynamoDB
-        │  毎朝 8:30 JST (GitHub Actions: daily-metrics)
-        ▼
-📁 metrics/YYYY-MM-DD.json  ← リポジトリに保管(Issueにはしない)
-        │  毎朝 9:00 JST (Claude Code Routine)
-        ├──────────────► 📊 日次レポート Issue (label: report) …1日1件・AI要約
-        │                    前日分レポートは自動クローズ(常時1件だけopen)
-        │
-        └──────────────► 💡 改善 Issue (label: improvement) …改善1件につき1本
-                             オーナーが approved を付与 / いらなければ close(=却下)
-        │  翌日の Routine が approved を検知
-        ▼
-実装 PR (本文に Closes #<改善Issue番号>) ── オーナーがマージ
-        │  main への push (GitHub Actions: deploy) / 改善Issueは自動クローズ
-        ▼
-本番反映 (S3 + CloudFront)
-```
+StarTrace の「収集 → 分析 → 提案 → 実装」を AI が自律で回す。オーナーは長期不在で監視できないため、
+**シグナルが乏しくても手を止めず、ロードマップから自発的に改善・コンテンツ拡充を続ける**。
+安全は「壊さない床」（CI緑・infra/.github自動変更禁止・1PR=revert可能・hold/停止）で担保する。
 
-## 0. 設計の要点(なぜこの形か)
+## 役割分担
 
-- **メトリクスは Issue にしない**。データダンプの Issue は溜まる一方でクローズが手間。
-  リポジトリの `metrics/` にJSONで保管し、履歴と傾向は git で追える。
-- **改善は1件1 Issue**。まとめ Issue だと1つ実装しても閉じられないが、
-  1件1 Issue なら実装 PR の `Closes #N` で**マージ時に自動クローズ**できる。
-- **オーナーが手で閉じるのは「却下」のときだけ**。それ以外のクローズは全部自動。
+| Routine | 時刻(JST) | 役割 |
+|---|---|---|
+| **Builder** | 5:00 | 分析＋提案＋**実装してPR作成**（承認待ちをしない。マージはしない） |
+| **Reviewer** | 6:00 | PRを審査して**マージ**（`docs/reviewer-policy.md`）。積極的に通す |
 
-## 1. 収集(テレメトリ) → リポジトリ保管
+## 1. 収集（テレメトリ） → リポジトリ保管
 
-- **利用イベント** `POST /api/event`: `trace_hit` / `trace_notfound` / `zukan_open` /
-  `dashboard_open` / `feedback_open` / `releasenotes_open` を日次カウンタ(pk=EVENT)に加算。
-  種別を増やすときは `backend/index.mjs` の許可リストと `src/lib/telemetry.ts` の
-  両方に足す(Lambdaコードのみの変更なのでスタック更新は不要、自動デプロイで反映)。
-- **エラー** `POST /api/error`: フロントの未捕捉エラーと Promise 失敗を自動報告
-  (`src/lib/telemetry.ts`)。本文・スタック(切り詰め)・URL・UA を保存し、
-  **30日で自動削除**(DynamoDB TTL)。1セッション最大5件に制限。
-- **フィードバック** `POST /api/feedback`(既存)。
-- 個人情報は一切収集しない(匿名ランダムIDのみ)。
-- **保管**: `.github/workflows/daily-metrics.yml` が毎日 **0:00 JST** に DynamoDB を集計し、
-  `metrics/YYYY-MM-DD.json` を main にコミットする(**Issueは作らない**)。
-  スキーマは `metrics/README.md` を参照。
-  GitHub のスケジュールは混雑時に1〜2時間遅延しうるため、Routine(5:00 JST)より
-  十分早い 0:00 JST に寄せてある。
+- 利用イベント `POST /api/event` / エラー `POST /api/error` / フィードバック `POST /api/feedback`。
+- `.github/workflows/daily-metrics.yml` が毎日 0:00 JST に集計し `metrics/YYYY-MM-DD.json` を main にコミット。
+  未処理FBは直近14日分のみ（古い決着済みFBの蒸し返し防止）。
+- 個人情報は集めない（匿名ランダムIDのみ）。
 
-## 2. 分析と改善(毎朝 5:00 JST — Claude Code Routine)
-
-Claude Code の Routine(定期実行)が新しいセッションで起動し、次を行う。
-
-> **判断軸(North Star)**: すべての分析・提案・優先度づけは `docs/product-goal.md` の
-> 目的(体験の質のバスケット。主軸=判定の正確さ/ネット正解率、次いでコンテンツ、楽しさ)に
-> 照らして行う。日次レポートには参考指標(トレース成功率)の現在値・傾向と、主軸の状態を記載する。
-> **主軸を安全に動かせる施策が無い日は膠着せず、他の軸(コンテンツ/楽しさ/使い勝手)の改善を
-> 進めてよい**(North Star は排他フィルタではなく優先度の軸)。ただし
-> **ガードレール(体感の悪い誤マッチを増やして数値を稼がない)は必ず守る**。
+## 2. 分析と実装（毎朝 5:00 JST — Builder）
 
 ### 2.1 入力を読む
+1. `metrics/` の当日分（無ければ最新）JSON。open な Issue・PR履歴も見る。
+2. **メトリクス/FBが乏しくても止まらない**（アグレッシブの肝）。データが無い日は、その旨を短く記録した上で、**ロードマップ（`product-goal.md`）や自分のコード/UX点検から改善を選ぶ**。
 
-1. `metrics/` の JSON を読む。**鮮度ガード**: 当日(JST)の `metrics/<今日>.json` が
-   存在するときだけ、それを入力として通常の処理を行う。当日ファイルがまだ無い場合は、
-   古い日付のファイルで当日レポートを作らず、「本日のメトリクス未取得」とだけ記録して
-   改善はスキップする(集計ワークフローの遅延・失敗で古い数字を出さないため)。
-2. open な `improvement` Issue(重複回避)、`feedback` ラベルの Issue、直近の PR履歴を読む。
-3. データが無い/取得できない日は、その旨だけ書いて終了(無理に提案をひねり出さない)。
+### 2.2 日次レポート Issue（label: `report`・冪等）
+- North Star バスケットの状態（判定精度の参考値＝トレース成功率、コンテンツ進捗、直近エラー）を簡潔に。
+- **冪等**: 同じ日付の report が既にあれば新規作成せず更新。前日以前の open な report はクローズ。
+- 「本日 実装した / 次に狙う」ロードマップ項目を書く。
 
-### 2.2 日次レポート Issue(1日1件・label: `report`)
+### 2.3 提案（アグレッシブ・多めに起票）
+- シグナルが無くても、**ロードマップ（`product-goal.md`）と自分のコード/UX点検から、改善 Issue を積極的に起票**する
+  （label: `improvement`、最大5件/日）。各Issueに 根拠 / 期待効果 / 実装規模(S/M・Lは分割) / 受け入れ条件。
+- **"何を作るか" の採否は Reviewer の承認に委ねる**（職務分離を維持）。既存の open improvement と重複する内容は作らない。
 
-1. その日のデータを **AIが要約・解釈**して Issue を1本にまとめる。
-   - タイトル: 「📊 日次レポート YYYY-MM-DD」
-   - 本文: 全体の動き / 気になる傾向(例: notfound率が高い=判定が厳しすぎる兆候) /
-     注目フィードバック / 直近エラーの要点 / **この日作成した改善Issueへのリンク一覧**。
-   - **冪等性ルール(重要)**: 同じ日付(当日 YYYY-MM-DD)の `report` Issue が
-     既に存在する場合(open/closed 問わず)は、**新規作成せず、その最新の1件の
-     本文を最新データで上書き更新する**。存在しない場合のみ新規作成する。
-     → 手動再実行や再発火で同じ日に複数回動いても、当日レポートは常に1本に保たれる。
-2. **前日以前の `report` Issue はすべてクローズする**(常時1件だけ open に保つ)。
+### 2.4 実装（承認済みを・アグレッシブな量で）
+- **`approved` の付いた improvement Issue を実装する**（＝Reviewer が承認したものだけ）。
+  1回の実行で**最大3件**、各 **S/M・1 Issue = 1 PR**（`Closes #<Issue番号>`）。
+- `approved` がまだ無ければ（初回など）、この回は**提案の起票だけでよい**（翌サイクルで Reviewer が承認 → 実装）。
+- **コンテンツ拡充を積極的に**（実在星座の追加、楽しい"おはなし星座"の追加）。実在星座は
+  実座標ベース＋なぞり順＋全種の識別性・不変性テスト追加＋`docs/constellation-data.md` 更新。
+- ユーザーに見える変更は `src/data/releaseNotes.ts` の先頭に子ども向けの言葉で追記。
+- 実装前に `npm run test` / `npm run lint` / `npm run build` を通す。判定系は shapeMatcher のテスト/シミュレーションで裏取り。
+- 実装した改善 Issue に PR リンクをコメント。
 
-### 2.3 改善 Issue(改善1件につき1本・label: `improvement`)
+### 2.5 禁止・注意（＝壊さない床。監視不在ゆえ厳守）
+- **`infra/**` と `.github/**` は変更しない**（必要と判断したら提案 Issue だけ立て、実装/マージは人間へ）。
+- main への直接 push・自分のPRのセルフマージ・**CIを通らない変更のマージ**。
+- 機能削除・破壊的変更・大規模リファクタ・正当な理由のない依存追加。
+- 同じ箇所の作り直し（thrash）や、既に下した判断の蒸し返し。
+- プライバシー方針（匿名・非収集）の変更。
+- 中核体験（なぞって正しく見つかる）を損なう判定変更（`product-goal.md` のガードレール）。
 
-1. 分析から見えた**具体的な改善を、1件ごとに独立した Issue** にする(1日あたり最大5件)。
-   - タイトル: 改善内容が分かる短い日本語(例: 「みつからない率が高いオリオン座の判定を緩める」)
-   - 本文に必ず: **根拠(どのデータ/FBから)** / 期待効果 / 実装規模(S/M/L) / 受け入れ条件。
-   - 既存の open な `improvement` と重複する内容は作らない。
-2. 提案すべきことが無い日は改善Issueを作らなくてよい(日次レポートに「今日は提案なし」と書く)。
+## 3. 承認・マージ（毎朝 6:00 JST — Reviewer）
 
-### 2.4 承認済み改善の実装
+`docs/reviewer-policy.md` に従い、PRを積極的にマージ（1日最大3件）。ただし壊さない床を厳守。
 
-1. label が `approved` で、まだ実装PRがリンクされていない `improvement` Issue を探す。
-2. 見つけたら **最も小さく価値のある1件だけ** を実装する:
-   - `main` から `claude/improve-<issue番号>` ブランチを切る
-   - リポジトリの規約に従い(テスト・lint・ビルドを通す)、必要なら docs も更新
-   - PR を作成し、**本文に `Closes #<改善Issue番号>` を必ず含める**(マージで自動クローズ)
-   - Issue にPRリンクをコメントする
-3. **マージはしない**。マージは別の **Reviewer Routine** が `docs/reviewer-policy.md`
-   に従って審査して行う(職務分離)。インフラ変更(cloudformation.yaml)を
-   伴う場合は、PR本文の先頭に「⚠️ スタック更新が必要」と明記する。
-4. ユーザーに見える変更を入れた PR では、`src/data/releaseNotes.ts` の先頭に
-   リリースノートを追記する(アプリ内「🆕 アップデート」に反映される)。
-
-### 2.5 禁止事項
-
-- main への直接 push・PR のセルフマージ
-- `approved` が付いていない改善の実装
-- メトリクスを Issue 化すること(生データはリポジトリの `metrics/` に置く)
-- 収集データの仕様変更(プライバシー方針の変更)を改善Issueなしに行うこと
-
-## 3. 承認とマージは Reviewer に委任(完全自律)
-
-`approved` の付与(採用判断)と PR のマージは、**Reviewer Routine** が
-`docs/reviewer-policy.md` の基準に従って自動で行う。オーナー(人間)の操作は
-基本的に**監督のみ**になる。
+## 4. オーナー（不在中）の緊急操作
 
 | やること | 方法 |
 |---|---|
-| その日の状況を知る | 📊 日次レポート Issue を読む(常時1件だけ open) |
-| 特定の変更を止める | 💡 Issue / PR に label **`hold`** を付ける(Reviewer は触らない) |
-| 提案を却下する | 💡 改善 Issue を close する |
-| おかしな変更を戻す | 該当 PR を revert(1 PR = 1小変更なので1発) |
-| ループ全体を止める | claude.ai の Routines 画面で Builder / Reviewer を一時停止 |
+| 特定の変更を止める | Issue/PR に **`hold`** |
+| 変な変更を戻す | 該当 PR を revert（1 PR = 1変更で1発） |
+| ループ全体を止める | claude.ai で Builder / Reviewer を一時停止 |
+| 保守運用へ戻す | `docs/archive/2026-07-25-conservative/` の3ドキュメントを復元 |
 
-## 4. 運用メモ
+## ラベル
+`report` / `improvement` / `approved`（任意・優先の印） / `hold`（自動処理から除外） / `feedback`。
 
-- Routine は claude.ai アカウント側の設定(リポジトリ内コードではない)。
-  スケジュール: **Builder 5:00 JST(20:00 UTC)** / **Reviewer 6:00 JST(21:00 UTC)**、
-  それぞれ新規セッションで起動。メトリクス収集(Actions)は **0:00 JST**。
-- メトリクスファイルが無い日(Actions失敗など)は、Builder は「データ未取得」と
-  日次レポートに記録して改善はスキップする(鮮度ガード)。
-- ラベル: `report`(日次レポート) / `improvement`(改善) / `approved`(採用) /
-  `hold`(自動処理から除外・人間預かり) / `feedback`。
-- 生データは `metrics/*.json`(git履歴)。過去の傾向はここを見る。
-- Reviewer の判断基準は `docs/reviewer-policy.md`。マージのCI緑判定は
-  `.github/workflows/ci.yml`(PRで test/lint/build)を根拠にする。
+## 詳しくは docs/
+`product-goal.md`（目的・ロードマップ・ガードレール・床） / `reviewer-policy.md` / `matching-algorithm.md` /
+`constellation-data.md` / `architecture.md` ほか。
