@@ -32,6 +32,14 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   },
   {
     date: '2026-08-01',
+    emoji: '🦋',
+    title: 'ちょうちょ座が なかまいり!',
+    items: [
+      'あたらしく「ちょうちょ座」が ふえたよ。みぎと ひだりの はねを、まんなかの くびれを とおって なぞってみてね',
+    ],
+  },
+  {
+    date: '2026-08-01',
     emoji: '🐟',
     title: 'うお座が なかまいり!',
     items: [
