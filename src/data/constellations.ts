@@ -562,4 +562,23 @@ export const CONSTELLATIONS: Constellation[] = [
       { x: 18, y: 46 },
     ],
   },
+  {
+    id: 'star',
+    nameJa: 'ほし座',
+    nameEn: 'Star',
+    latinName: 'Stella',
+    category: 'fun',
+    emoji: '⭐',
+    hint: 'せんが つながった、さきが 5つ ある ほしがたの かたち',
+    description:
+      'よぞらの ていばん、5つの とがりが ある ほしがたの星座だよ。1本の せんで ぐるっと かけちゃうよ!',
+    path: [
+      { x: 50, y: 8 },
+      { x: 75, y: 84 },
+      { x: 10, y: 37 },
+      { x: 90, y: 37 },
+      { x: 25, y: 84 },
+      { x: 50, y: 8 },
+    ],
+  },
 ];

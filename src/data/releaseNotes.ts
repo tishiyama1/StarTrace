@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-07-30',
+    emoji: '⭐',
+    title: 'ほし座が なかまいり!',
+    items: [
+      'あたらしく「ほし座」が ふえたよ。1本の せんで さきが 5つ ある ほしがたを ぐるっと なぞってみてね',
+    ],
+  },
+  {
     date: '2026-07-28',
     emoji: '🐐',
     title: 'やぎ座が なかまいり!',
