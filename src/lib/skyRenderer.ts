@@ -730,3 +730,21 @@ export function drawDiscoveredConstellations(
   });
   ctx.restore();
 }
+
+export interface UserStrokeStyle {
+  strokeStyle: string;
+  lineWidth: number;
+  shadowBlur: number;
+}
+
+/**
+ * なぞっている(なぞった)線の見た目。`dimmed` は「みつからないね」表示中など、
+ * いま操作中ではなく直前の軌跡を控えめに残しておきたいときに使う
+ * (いま操作中の線と見た目で区別できるように、少し薄く細くする)。
+ */
+export function getUserStrokeStyle(dimmed: boolean): UserStrokeStyle {
+  if (dimmed) {
+    return { strokeStyle: 'rgba(126, 232, 255, 0.45)', lineWidth: 4, shadowBlur: 6 };
+  }
+  return { strokeStyle: '#7ee8ff', lineWidth: 6, shadowBlur: 14 };
+}
