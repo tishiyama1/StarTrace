@@ -13,7 +13,7 @@
 
 ## 2. データ構造
 
-`src/data/constellations.ts` に以下の型で全29星座を定義する。
+`src/data/constellations.ts` に以下の型で全30星座を定義する。
 
 ```ts
 export type ConstellationCategory = 'real' | 'fun';
@@ -66,7 +66,7 @@ export interface Constellation {
 | 19 | `capricornus` | やぎ座 | はしが細く反対側が大きく広がる三角形 |
 | 20 | `sagittarius` | いて座 | きゅうす(ティーポット)型の七角形 |
 
-### 3.2 おはなしの星座(9個 / `category: 'fun'`・非実在)
+### 3.2 おはなしの星座(10個 / `category: 'fun'`・非実在)
 
 | # | id | 表示名 | 形の特徴 |
 |---|---|---|---|
@@ -79,6 +79,7 @@ export interface Constellation {
 | 27 | `ghost` | おばけ座 | 丸い頭+下がギザギザ |
 | 28 | `mushroom` | キノコ座 | ドーム型のかさ+四角い柄 |
 | 29 | `star` | ほし座 | 1本の線で結ぶ五芒星(交差する星形) |
+| 30 | `moon-rabbit` | つきのうさぎ座 | 2つの耳のとがり+三日月のふくらみ |
 
 実際の星座は星の並びを参考にしつつ、**一筆書きでなぞれる代表的なシルエット**に単純化している。
 「おはなしの星座」は完全にオリジナルで、子供が喜ぶモチーフを一筆書きできる形にした。
