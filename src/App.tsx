@@ -87,6 +87,8 @@ function App() {
 
       // どの星座にも十分似ていない場合は「みつからないね」演出にする
       // (適当ななぐり書きでも必ず何かがヒットしてしまうのを防ぐ)。
+      // currentStroke はここでリセットしない: なぞった線を夜空に残しておき、
+      // 本人が見返して次の再挑戦に活かせるようにする(「もういちど なぞる」で reset() される)
       if (matchResult.score < NOT_FOUND_SCORE_THRESHOLD) {
         sendEvent('trace_notfound', clientId);
         setNotFound(true);
@@ -231,6 +233,7 @@ function App() {
         overlayPoints={overlayPoints}
         discovered={discoveries.discovered}
         interactive={canvasInteractive}
+        strokeDimmed={notFound}
         pointerHandlers={handlers}
       />
 

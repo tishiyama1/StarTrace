@@ -14,6 +14,7 @@ import {
   generateBrightStars,
   generateConstellationSlots,
   generateHorizon,
+  getUserStrokeStyle,
   moonIlluminationFraction,
   mulberry32,
   valueNoise2,
@@ -280,6 +281,16 @@ describe('drawDiscoveredConstellations', () => {
       },
     ];
     expect(() => drawDiscoveredConstellations(ctx, items, 800, 1234)).not.toThrow();
+  });
+});
+
+describe('getUserStrokeStyle', () => {
+  it('returns a fainter, thinner style when dimmed (「みつからないね」表示中など)', () => {
+    const active = getUserStrokeStyle(false);
+    const dimmed = getUserStrokeStyle(true);
+    expect(dimmed.lineWidth).toBeLessThan(active.lineWidth);
+    expect(dimmed.shadowBlur).toBeLessThan(active.shadowBlur);
+    expect(dimmed.strokeStyle).not.toBe(active.strokeStyle);
   });
 });
 

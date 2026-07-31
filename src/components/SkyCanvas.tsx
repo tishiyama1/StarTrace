@@ -23,6 +23,7 @@ import {
   generateConstellationSlots,
   generateHorizon,
   getMoonSprite,
+  getUserStrokeStyle,
   renderAtmosphere,
   renderStaticSky,
   type DiscoveredConstellationItem,
@@ -49,6 +50,8 @@ interface SkyCanvasProps {
   overlayPoints: Point[] | null;
   discovered: Set<string>;
   interactive: boolean;
+  /** true のとき、なぞった線を「いま操作中」ではなく控えめな見た目で残す(「みつからないね」表示中など) */
+  strokeDimmed: boolean;
   pointerHandlers: PointerHandlers;
 }
 
@@ -59,6 +62,7 @@ export function SkyCanvas({
   overlayPoints,
   discovered,
   interactive,
+  strokeDimmed,
   pointerHandlers,
 }: SkyCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -81,6 +85,7 @@ export function SkyCanvas({
 
   const strokeRef = useRef<Point[]>(currentStroke);
   const overlayRef = useRef<Point[] | null>(overlayPoints);
+  const strokeDimmedRef = useRef<boolean>(strokeDimmed);
   const discoveredItemsRef = useRef<DiscoveredConstellationItem[]>([]);
   const animationFrameRef = useRef<number>(0);
 
@@ -91,6 +96,10 @@ export function SkyCanvas({
   useEffect(() => {
     overlayRef.current = overlayPoints;
   }, [overlayPoints]);
+
+  useEffect(() => {
+    strokeDimmedRef.current = strokeDimmed;
+  }, [strokeDimmed]);
 
   useEffect(() => {
     discoveredItemsRef.current = CONSTELLATIONS.reduce<DiscoveredConstellationItem[]>(
@@ -271,16 +280,18 @@ export function SkyCanvas({
         ctx.restore();
       }
 
-      // ユーザーがなぞっている光る線
+      // ユーザーがなぞっている(なぞった)光る線。「みつからないね」表示中は
+      // 控えめな見た目にして、いま操作中の線と混同しないようにする
       const stroke = strokeRef.current;
       if (stroke.length > 1) {
+        const style = getUserStrokeStyle(strokeDimmedRef.current);
         ctx.save();
-        ctx.strokeStyle = '#7ee8ff';
-        ctx.lineWidth = 6;
+        ctx.strokeStyle = style.strokeStyle;
+        ctx.lineWidth = style.lineWidth;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowColor = '#7ee8ff';
-        ctx.shadowBlur = 14;
+        ctx.shadowColor = style.strokeStyle;
+        ctx.shadowBlur = style.shadowBlur;
         drawStrokePath(ctx, stroke);
         ctx.restore();
       }
