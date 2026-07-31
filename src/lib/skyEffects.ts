@@ -77,6 +77,58 @@ export interface Aurora {
   accumulator?: Float32Array;
 }
 
+/**
+ * OSの「動きを減らす(prefers-reduced-motion)」設定が有効かどうか。
+ * matchMedia が無い環境(テスト・SSR等)では安全に false を返す。
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+export type SkyEventKind = 'shootingStar' | 'fireball' | 'shower' | 'satellite' | 'aurora';
+
+export interface SkyEventRoll {
+  /** 今回起こすイベント。reduced-motion時は何も起こさない(null) */
+  kind: SkyEventKind | null;
+  /** 次にこの抽選を行うまでの待ち時間(ms) */
+  nextEventIn: number;
+  /** kind が 'shower' のときの本数 */
+  showerCount?: number;
+}
+
+/** reduced-motion時、演出スケジューラの次チェックまでの間隔(ms)。事実上イベントを止める長さ */
+const REDUCED_MOTION_EVENT_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+
+/**
+ * 夜空の動く演出(流れ星・火球・流星群・人工衛星・オーロラ)のスケジューラ抽選。
+ * reduced-motion時は何も起こさず、長い間隔だけ返して発生頻度を事実上ゼロにする
+ * (瞬く星などの静的〜低頻度な表示は skyRenderer.ts 側でこの影響を受けず維持される)。
+ */
+export function rollSkyEvent(reducedMotion: boolean, roll: number = Math.random()): SkyEventRoll {
+  if (reducedMotion) {
+    return { kind: null, nextEventIn: REDUCED_MOTION_EVENT_CHECK_INTERVAL_MS };
+  }
+  if (roll < 0.52) {
+    return { kind: 'shootingStar', nextEventIn: 3000 + Math.random() * 4500 };
+  } else if (roll < 0.64) {
+    // 火球: 大きく明るい流れ星(すこし珍しい)
+    return { kind: 'fireball', nextEventIn: 6000 + Math.random() * 6000 };
+  } else if (roll < 0.76) {
+    // 流星群: 数秒のあいだに立てつづけに流れる
+    return {
+      kind: 'shower',
+      nextEventIn: 16000 + Math.random() * 14000,
+      showerCount: 4 + Math.floor(Math.random() * 4),
+    };
+  } else if (roll < 0.9) {
+    // 人工衛星: またたかず、すーっと等速で横切る
+    return { kind: 'satellite', nextEventIn: 8000 + Math.random() * 8000 };
+  }
+  // オーロラ: いちばん珍しい。しばらく空が色づく
+  return { kind: 'aurora', nextEventIn: 25000 + Math.random() * 20000 };
+}
+
 /** 流れ星の色バリエーション(実際の流星も組成で色が変わる)。 */
 const METEOR_COLORS = [
   '220, 240, 255', // 白〜青白(いちばん多い)

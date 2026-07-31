@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   auroraEnvelope,
+  prefersReducedMotion,
+  rollSkyEvent,
   spawnAurora,
   spawnSatellite,
   spawnShootingStar,
@@ -205,6 +207,49 @@ describe('aurora', () => {
     expect(auroraEnvelope(a)).toBeCloseTo(1, 5);
     a.age = a.life;
     expect(auroraEnvelope(a)).toBe(0);
+  });
+});
+
+describe('prefersReducedMotion', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns false when matchMedia is unavailable (e.g. test/SSR environments)', () => {
+    expect(prefersReducedMotion()).toBe(false);
+  });
+
+  it('reflects window.matchMedia(prefers-reduced-motion: reduce).matches', () => {
+    const matchMedia = vi.fn().mockReturnValue({ matches: true });
+    vi.stubGlobal('matchMedia', matchMedia);
+    expect(prefersReducedMotion()).toBe(true);
+    expect(matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
+  });
+});
+
+describe('rollSkyEvent', () => {
+  it('stops all decorative dynamic events when reduced motion is on, regardless of the roll', () => {
+    for (const roll of [0, 0.1, 0.52, 0.64, 0.76, 0.9, 0.999]) {
+      const decision = rollSkyEvent(true, roll);
+      expect(decision.kind).toBeNull();
+      // 実質発生しないくらい長い間隔まで後ろ倒しにする
+      expect(decision.nextEventIn).toBeGreaterThan(60_000);
+    }
+  });
+
+  it('keeps the normal event distribution when reduced motion is off', () => {
+    expect(rollSkyEvent(false, 0).kind).toBe('shootingStar');
+    expect(rollSkyEvent(false, 0.6).kind).toBe('fireball');
+    expect(rollSkyEvent(false, 0.7).kind).toBe('shower');
+    expect(rollSkyEvent(false, 0.85).kind).toBe('satellite');
+    expect(rollSkyEvent(false, 0.95).kind).toBe('aurora');
+  });
+
+  it('gives the shower roll a positive shower count only', () => {
+    const decision = rollSkyEvent(false, 0.7);
+    expect(decision.kind).toBe('shower');
+    expect(decision.showerCount).toBeGreaterThan(0);
+    expect(rollSkyEvent(false, 0).showerCount).toBeUndefined();
   });
 });
 
