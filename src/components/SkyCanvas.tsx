@@ -5,6 +5,8 @@ import {
   drawAurora,
   drawSatellites,
   drawShootingStars,
+  prefersReducedMotion,
+  rollSkyEvent,
   spawnAurora,
   spawnSatellite,
   spawnShootingStar,
@@ -83,6 +85,20 @@ export function SkyCanvas({
   const overlayRef = useRef<Point[] | null>(overlayPoints);
   const discoveredItemsRef = useRef<DiscoveredConstellationItem[]>([]);
   const animationFrameRef = useRef<number>(0);
+
+  // OSの「動きを減らす」設定。流れ星等の演出頻度だけに使う(なぞり判定には無関係)
+  const reducedMotionRef = useRef<boolean>(prefersReducedMotion());
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => {
+      reducedMotionRef.current = mq.matches;
+    };
+    update();
+    mq.addEventListener?.('change', update);
+    return () => mq.removeEventListener?.('change', update);
+  }, []);
 
   useEffect(() => {
     strokeRef.current = currentStroke;
@@ -199,34 +215,36 @@ export function SkyCanvas({
       // ── 夜空イベントのスケジューラ ──
       // 数秒ごとに「ふつうの流れ星 / 火球 / 流星群 / 人工衛星 / オーロラ」の
       // どれかが起こる。眺めているだけでも、たまに珍しいものが見られる。
+      // 「動きを減らす」設定が有効なときは rollSkyEvent が何も起こさない
+      // (前庭系刺激への配慮・バッテリー節約。瞬く星などの静的表示は影響を受けない)
       nextEventInRef.current -= dt;
       if (nextEventInRef.current <= 0) {
-        const roll = Math.random();
-        if (roll < 0.52) {
-          if (shootingStarsRef.current.length < 3) {
-            shootingStarsRef.current.push(spawnShootingStar());
-          }
-          nextEventInRef.current = 3000 + Math.random() * 4500;
-        } else if (roll < 0.64) {
-          // 火球: 大きく明るい流れ星(すこし珍しい)
-          shootingStarsRef.current.push(spawnShootingStar('fireball'));
-          nextEventInRef.current = 6000 + Math.random() * 6000;
-        } else if (roll < 0.76) {
-          // 流星群: 数秒のあいだに立てつづけに流れる
-          showerRef.current = { remaining: 4 + Math.floor(Math.random() * 4), nextIn: 0 };
-          nextEventInRef.current = 16000 + Math.random() * 14000;
-        } else if (roll < 0.9) {
-          // 人工衛星: またたかず、すーっと等速で横切る
-          if (satellitesRef.current.length < 1) {
-            satellitesRef.current.push(spawnSatellite());
-          }
-          nextEventInRef.current = 8000 + Math.random() * 8000;
-        } else {
-          // オーロラ: いちばん珍しい。しばらく空が色づく
-          if (!auroraRef.current) {
-            auroraRef.current = spawnAurora();
-          }
-          nextEventInRef.current = 25000 + Math.random() * 20000;
+        const decision = rollSkyEvent(reducedMotionRef.current);
+        nextEventInRef.current = decision.nextEventIn;
+        switch (decision.kind) {
+          case 'shootingStar':
+            if (shootingStarsRef.current.length < 3) {
+              shootingStarsRef.current.push(spawnShootingStar());
+            }
+            break;
+          case 'fireball':
+            shootingStarsRef.current.push(spawnShootingStar('fireball'));
+            break;
+          case 'shower':
+            showerRef.current = { remaining: decision.showerCount ?? 0, nextIn: 0 };
+            break;
+          case 'satellite':
+            if (satellitesRef.current.length < 1) {
+              satellitesRef.current.push(spawnSatellite());
+            }
+            break;
+          case 'aurora':
+            if (!auroraRef.current) {
+              auroraRef.current = spawnAurora();
+            }
+            break;
+          default:
+            break;
         }
       }
 
