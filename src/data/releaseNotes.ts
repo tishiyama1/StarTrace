@@ -16,6 +16,14 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     date: '2026-08-01',
+    emoji: '⚖️',
+    title: 'てんびん座が なかまいり!',
+    items: [
+      'あたらしく「てんびん座」が ふえたよ。あかるい星「ズベンエルゲヌビ」から、よこに ひろく ひらいた「はかり」の かたちを なぞってみてね',
+    ],
+  },
+  {
+    date: '2026-08-01',
     emoji: '🐇',
     title: 'つきのうさぎ座が なかまいり!',
     items: [
