@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Header } from './components/Header';
 import { ResultOverlay } from './components/ResultOverlay';
@@ -43,15 +43,26 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [hintExpired, setHintExpired] = useState(false);
+  const hintRemainingMsRef = useRef(TRACE_HINT_DURATION_MS);
 
   const discoveries = useDiscoveries();
   const clientId = useClientId();
 
-  // なぞりガイドは起動から一定時間で消す(以後は再表示しない)
+  const anyOverlayOpen = showZukan || showDashboard || showFeedback || showReleaseNotes;
+  const resultShowing = result !== null || notFound;
+  const canvasInteractive = !resultShowing && !anyOverlayOpen;
+
+  // なぞりガイドは「キャンバスを操作できる時間」の合計が一定時間に達したら消す(以後は再表示しない)。
+  // 図鑑・ダッシュボード等の他画面を開いている間はカウントを進めない。
   useEffect(() => {
-    const timer = setTimeout(() => setHintExpired(true), TRACE_HINT_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, []);
+    if (hintExpired || !canvasInteractive) return;
+    const start = Date.now();
+    const timer = setTimeout(() => setHintExpired(true), hintRemainingMsRef.current);
+    return () => {
+      clearTimeout(timer);
+      hintRemainingMsRef.current = Math.max(0, hintRemainingMsRef.current - (Date.now() - start));
+    };
+  }, [canvasInteractive, hintExpired]);
 
   // 未捕捉エラーの自動報告(改善ループの入力になる)
   useEffect(() => {
@@ -131,9 +142,6 @@ function App() {
     reset();
   }, [reset]);
 
-  const anyOverlayOpen = showZukan || showDashboard || showFeedback || showReleaseNotes;
-  const resultShowing = result !== null || notFound;
-  const canvasInteractive = !resultShowing && !anyOverlayOpen;
   const showTraceHint = canvasInteractive && currentStroke.length === 0 && !hintExpired;
 
   return (

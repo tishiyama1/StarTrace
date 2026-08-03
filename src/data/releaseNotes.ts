@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-08-04',
+    emoji: '👆',
+    title: 'ゆびで なぞる あんないが きえにくく!',
+    items: [
+      'ずかんや メニューを みているあいだは、「ゆびで なぞってみてね」の あんないが すすまないようにしたよ。もどってきたときも ちゃんと あんないが みえるはず',
+    ],
+  },
+  {
     date: '2026-08-01',
     emoji: '⚖️',
     title: 'てんびん座が なかまいり!',
