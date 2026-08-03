@@ -1,0 +1,136 @@
+{
+  "date": "2026-08-04",
+  "generatedAt": "2026-08-03T17:07:49Z",
+  "totals": {
+    "users": 10,
+    "discoveries": 580
+  },
+  "events7d": [
+    {
+      "date": "2026-08-02",
+      "type": "trace_notfound",
+      "count": 8
+    },
+    {
+      "date": "2026-08-02",
+      "type": "trace_hit",
+      "count": 3
+    },
+    {
+      "date": "2026-08-02",
+      "type": "releasenotes_open",
+      "count": 1
+    }
+  ],
+  "constellations": [
+    {
+      "id": "cassiopeia",
+      "count": 70
+    },
+    {
+      "id": "heart",
+      "count": 66
+    },
+    {
+      "id": "pegasus",
+      "count": 54
+    },
+    {
+      "id": "ursa-major",
+      "count": 34
+    },
+    {
+      "id": "ramen",
+      "count": 33
+    },
+    {
+      "id": "gemini",
+      "count": 31
+    },
+    {
+      "id": "scorpius",
+      "count": 29
+    },
+    {
+      "id": "aries",
+      "count": 27
+    },
+    {
+      "id": "lightning",
+      "count": 27
+    },
+    {
+      "id": "taurus",
+      "count": 22
+    },
+    {
+      "id": "aquila",
+      "count": 20
+    },
+    {
+      "id": "cat",
+      "count": 20
+    },
+    {
+      "id": "mushroom",
+      "count": 20
+    },
+    {
+      "id": "lyra",
+      "count": 19
+    },
+    {
+      "id": "ursa-minor",
+      "count": 19
+    },
+    {
+      "id": "orion",
+      "count": 15
+    },
+    {
+      "id": "mona-lisa",
+      "count": 13
+    },
+    {
+      "id": "cepheus",
+      "count": 12
+    },
+    {
+      "id": "aquarius",
+      "count": 10
+    },
+    {
+      "id": "delphinus",
+      "count": 10
+    },
+    {
+      "id": "leo",
+      "count": 10
+    },
+    {
+      "id": "cygnus",
+      "count": 7
+    },
+    {
+      "id": "ghost",
+      "count": 6
+    },
+    {
+      "id": "rocket",
+      "count": 4
+    },
+    {
+      "id": "virgo",
+      "count": 2
+    }
+  ],
+  "feedbackUnprocessed": [],
+  "errorsRecent": [
+    {
+      "createdAt": "2026-07-09T05:31:36.246Z",
+      "message": "Script error.",
+      "url": "/",
+      "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHT"
+    }
+  ]
+}
