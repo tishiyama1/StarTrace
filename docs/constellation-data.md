@@ -68,6 +68,7 @@ export interface Constellation {
 | `capricornus` | やぎ座 | はしが細く反対側が大きく広がる三角形 |
 | `sagittarius` | いて座 | きゅうす(ティーポット)型の七角形 |
 | `libra` | てんびん座 | 左右に開いた横長のはかり型 |
+| `pisces` | うお座 | 小さな輪が2つ、長いリボンでつながる形 |
 
 ### 3.2 おはなしの星座(`category: 'fun'`・非実在)
 

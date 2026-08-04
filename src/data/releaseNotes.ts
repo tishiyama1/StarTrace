@@ -32,6 +32,14 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   },
   {
     date: '2026-08-01',
+    emoji: '🐟',
+    title: 'うお座が なかまいり!',
+    items: [
+      'あたらしく「うお座」が ふえたよ。2ひきの さかなを むすぶ ながい リボンを なぞってみてね',
+    ],
+  },
+  {
+    date: '2026-08-01',
     emoji: '🐇',
     title: 'つきのうさぎ座が なかまいり!',
     items: [
