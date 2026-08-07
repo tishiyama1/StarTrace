@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 import { submitFeedback, type FeedbackCategory } from '../lib/api';
 
 interface FeedbackFormProps {
@@ -28,6 +29,8 @@ export function FeedbackForm({ clientId, onClose }: FeedbackFormProps) {
   const [category, setCategory] = useState<FeedbackCategory>('star');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<Status>('editing');
+
+  useEscapeKey(onClose);
 
   const trimmed = message.trim();
   const canSend = trimmed.length > 0 && trimmed.length <= MAX_LENGTH && status !== 'sending';

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CONSTELLATIONS } from '../data/constellations';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 import { fetchStats, type GlobalStats } from '../lib/api';
 
 interface DashboardProps {
@@ -17,6 +18,8 @@ const TOTAL_KINDS = CONSTELLATIONS.length;
 
 export function Dashboard({ discovered, onClose }: DashboardProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+
+  useEscapeKey(onClose);
 
   useEffect(() => {
     let cancelled = false;
