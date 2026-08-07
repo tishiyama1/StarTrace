@@ -1,10 +1,13 @@
 import { RELEASE_NOTES } from '../data/releaseNotes';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface ReleaseNotesProps {
   onClose: () => void;
 }
 
 export function ReleaseNotes({ onClose }: ReleaseNotesProps) {
+  useEscapeKey(onClose);
+
   return (
     <div className="releasenotes" role="dialog" aria-label="アップデート">
       <div className="releasenotes__header">

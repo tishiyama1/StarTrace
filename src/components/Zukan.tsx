@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ConstellationDiagram } from './ConstellationDiagram';
 import { CONSTELLATIONS } from '../data/constellations';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 import type { Constellation, ConstellationCategory } from '../types';
 
 interface ZukanProps {
@@ -44,6 +45,8 @@ function ZukanCard({ constellation, found }: { constellation: Constellation; fou
 export function Zukan({ discovered, onClose, onReset }: ZukanProps) {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [confirmingReset, setConfirmingReset] = useState(false);
+
+  useEscapeKey(onClose);
 
   const total = CONSTELLATIONS.length;
   const foundCount = CONSTELLATIONS.filter((c) => discovered.has(c.id)).length;

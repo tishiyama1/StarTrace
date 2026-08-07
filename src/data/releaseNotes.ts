@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-08-07',
+    emoji: '⌨️',
+    title: 'ずかんや メニューを Escキーで とじられるように!',
+    items: [
+      'ずかん・みんなの ほしぞら・いけんを おくる・アップデートの がめんを、キーボードの Esc キーで とじられるようにしたよ',
+    ],
+  },
+  {
     date: '2026-08-04',
     emoji: '👆',
     title: 'ゆびで なぞる あんないが きえにくく!',
