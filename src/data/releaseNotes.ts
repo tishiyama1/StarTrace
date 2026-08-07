@@ -15,6 +15,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: '2026-08-06',
+    emoji: '🔭',
+    title: '「みつからないね」が、おしいときは べつのメッセージに!',
+    items: [
+      'せいざが みつからなかったとき、けっこう いいかんじに なぞれていたら「おしい!もうちょっとだ!」と おうえんするよ',
+    ],
+  },
+  {
     date: '2026-08-04',
     emoji: '👆',
     title: 'ゆびで なぞる あんないが きえにくく!',

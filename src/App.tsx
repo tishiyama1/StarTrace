@@ -36,6 +36,7 @@ function App() {
   const [hint, setHint] = useState<string | null>(DEFAULT_HINT);
   const [isNewDiscovery, setIsNewDiscovery] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [notFoundScore, setNotFoundScore] = useState<number | undefined>(undefined);
   const [showZukan, setShowZukan] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -103,6 +104,7 @@ function App() {
       if (matchResult.score < NOT_FOUND_SCORE_THRESHOLD) {
         sendEvent('trace_notfound', clientId);
         setNotFound(true);
+        setNotFoundScore(matchResult.score);
         setResult(null);
         setOverlayPoints(null);
         setIsNewDiscovery(false);
@@ -138,6 +140,7 @@ function App() {
     setOverlayPoints(null);
     setIsNewDiscovery(false);
     setNotFound(false);
+    setNotFoundScore(undefined);
     setHint(DEFAULT_HINT);
     reset();
   }, [reset]);
@@ -255,7 +258,11 @@ function App() {
       )}
 
       {notFound && (
-        <NotFoundOverlay onRetry={handleRetry} onOpenZukan={() => setShowZukan(true)} />
+        <NotFoundOverlay
+          score={notFoundScore}
+          onRetry={handleRetry}
+          onOpenZukan={() => setShowZukan(true)}
+        />
       )}
 
       {showZukan && (
